@@ -37,15 +37,15 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
   int bitsPerSample = input.bitsPerSample();
   int channels = input.channels();
 
-  if (bitsPerSample != 8 || bitsPerSample != 16 || bitsPerSample != 32) {
-    return 1;
+  if (bitsPerSample != 8 && bitsPerSample != 16 && bitsPerSample != 32) {
+    return 0;
   }
 
   if (channels != 2) {
-    return 1;
+    return 0;
   }
 
-  return 0;
+  return 1;
 }
 
 int AudioOutI2SClass::play(AudioIn& input)
