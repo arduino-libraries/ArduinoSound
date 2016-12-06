@@ -47,6 +47,7 @@ public:
 
   virtual int cue(long time);
 
+protected:
   virtual int begin();
   virtual int read(void* buffer, size_t size);
   virtual int reset();
