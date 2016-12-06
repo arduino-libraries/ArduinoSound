@@ -1,0 +1,43 @@
+#######################################
+# Syntax Coloring Map For ArduinoSound
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+ArduinoSound	KEYWORD1
+
+AudioAnalyzer	KEYWORD1
+AudioIn	KEYWORD1
+AudioOut	KEYWORD1
+SoundFile	KEYWORD1
+SDWaveFile	KEYWORD1
+AmplitudeAnalyzer	KEYWORD1
+AudioOutI2S	KEYWORD1
+AudioInI2S	KEYWORD1
+FFTAnalyzer	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+sampleRate	KEYWORD2
+bitsPerSample	KEYWORD2
+channels	KEYWORD2
+
+canPlay	KEYWORD2
+play	KEYWORD2
+loop	KEYWORD2
+pause	KEYWORD2
+stop	KEYWORD2
+isPlaying	KEYWORD2
+isPaused	KEYWORD2
+
+volume	KEYWORD2
+
+input	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
