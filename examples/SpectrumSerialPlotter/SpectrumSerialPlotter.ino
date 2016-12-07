@@ -44,13 +44,13 @@ void setup() {
   }
 
   // setup the I2S audio input for the sample rate with 32-bits per sample
-  if (AudioInI2S.begin(sampleRate, 32)) {
+  if (!AudioInI2S.begin(sampleRate, 32)) {
     Serial.println("Failed to initialize I2S input!");
     while (1); // do nothing
   }
 
   // configure the I2S input as the input for the FFT analyzer
-  if (fftAnalyzer.input(AudioInI2S)) {
+  if (!fftAnalyzer.input(AudioInI2S)) {
     Serial.println("Failed to set FFT analyzer input!");
     while (1); // do nothing
   }

@@ -38,13 +38,13 @@ void setup() {
   pinMode(ledPin, OUTPUT);
 
   // setup the I2S audio input for 44.1 kHz with 32-bits per sample
-  if (AudioInI2S.begin(44100, 32)) {
+  if (!AudioInI2S.begin(44100, 32)) {
     Serial.println("Failed to initialize I2S input!");
     while (1); // do nothing
   }
 
   // configure the I2S input as the input for the amplitude analyzer
-  if (amplitudeAnalyzer.input(AudioInI2S)) {
+  if (!amplitudeAnalyzer.input(AudioInI2S)) {
     Serial.println("Failed to set amplitude analyzer input!");
     while (1); // do nothing
   }

@@ -32,16 +32,16 @@ AudioIn::~AudioIn()
 int AudioIn::setAnalyzer(AudioAnalyzer* analyzer)
 {
   if (_analyzer) {
-    return 1;
+    return 0;
   }
 
-  if (analyzer->configure(this)) {
-    return 1;
+  if (!analyzer->configure(this)) {
+    return 0;
   }
 
   _analyzer = analyzer;
 
-  return 0;
+  return 1;
 }
 
 void AudioIn::samplesRead(void* buffer, size_t size)

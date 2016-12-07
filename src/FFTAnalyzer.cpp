@@ -78,20 +78,20 @@ int FFTAnalyzer::configure(AudioIn* input)
   int channels = input->channels();
 
   if (bitsPerSample != 16 && bitsPerSample != 32) {
-    return 1;
+    return 0;
   }
 
   if (channels != 1 && channels != 2) {
-    return 1;
+    return 0;
   }
 
   if (bitsPerSample == 16) {
     if (ARM_MATH_SUCCESS != arm_rfft_init_q15(&_S15, _length, 0, 1)) {
-      return 1;
+      return 0;
     }
   } else {
     if (ARM_MATH_SUCCESS != arm_rfft_init_q31(&_S31, _length, 0, 1)) {
-      return 1;
+      return 0;
     }
   }
 
@@ -126,10 +126,10 @@ int FFTAnalyzer::configure(AudioIn* input)
       _spectrumBuffer = NULL;
     }
 
-    return 1;
+    return 0;
   }
 
-  return 0;
+  return 1;
 }
 
 void FFTAnalyzer::update(const void* buffer, size_t size)

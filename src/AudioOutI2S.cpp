@@ -61,18 +61,18 @@ int AudioOutI2SClass::loop(AudioIn& input)
 int AudioOutI2SClass::pause()
 {
   if (!isPlaying()) {
-    return 1;
+    return 0;
   }
 
   _paused = true;
 
-  return 0;
+  return 1;
 }
 
 int AudioOutI2SClass::resume()
 {
   if (!_paused) {
-    return 1;
+    return 0;
   }
 
   _paused = false;
@@ -84,13 +84,13 @@ int AudioOutI2SClass::resume()
   I2S.write(silence, sizeof(silence));
   I2S.write(silence, sizeof(silence));
 
-  return 0;
+  return 1;
 }
 
 int AudioOutI2SClass::stop()
 {
   if (!_input) {
-    return 1;    
+    return 0;    
   }
 
   endInput(_input);
@@ -119,13 +119,13 @@ int AudioOutI2SClass::startPlayback(AudioIn& input, bool loop)
 
   I2S.onTransmit(AudioOutI2SClass::onI2STransmit);
 
-  if (I2S.begin(I2S_PHILIPS_MODE, input.sampleRate(), input.bitsPerSample())) {
-    return 1;
+  if (!I2S.begin(I2S_PHILIPS_MODE, input.sampleRate(), input.bitsPerSample())) {
+    return 0;
   }
 
-  if (beginInput(&input)) {
+  if (!beginInput(&input)) {
     I2S.end();
-    return 1;
+    return 0;
   }
 
   _input = &input;
@@ -137,7 +137,7 @@ int AudioOutI2SClass::startPlayback(AudioIn& input, bool loop)
   I2S.write(silence, sizeof(silence));
   I2S.write(silence, sizeof(silence));
 
-  return 0;
+  return 1;
 }
 
 void AudioOutI2SClass::onTransmit()
@@ -158,7 +158,7 @@ void AudioOutI2SClass::onTransmit()
     }
 
     // reset the input
-    if (resetInput(_input)) {
+    if (!resetInput(_input)) {
       I2S.end();
       return;
     }

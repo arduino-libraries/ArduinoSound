@@ -33,8 +33,8 @@ AudioInI2SClass::~AudioInI2SClass()
 
 int AudioInI2SClass::begin(long sampleRate, int bitsPerSample)
 {
-  if (I2S.begin(I2S_PHILIPS_MODE, sampleRate, bitsPerSample)) {
-    return 1;
+  if (!I2S.begin(I2S_PHILIPS_MODE, sampleRate, bitsPerSample)) {
+    return 0;
   }
 
   _sampleRate = sampleRate;
@@ -46,7 +46,7 @@ int AudioInI2SClass::begin(long sampleRate, int bitsPerSample)
   // trigger a read to kick things off
   I2S.read();
 
-  return 0;
+  return 1;
 }
 
 void AudioInI2SClass::end()

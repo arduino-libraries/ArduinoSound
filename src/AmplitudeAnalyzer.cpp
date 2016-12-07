@@ -51,12 +51,12 @@ int AmplitudeAnalyzer::configure(AudioIn* input)
   int bitsPerSample = input->bitsPerSample();
 
   if (bitsPerSample != 16 && bitsPerSample != 32) {
-    return 1;
+    return 0;
   }
 
   _bitsPerSample = bitsPerSample;
 
-  return 0;
+  return 1;
 }
 
 void AmplitudeAnalyzer::update(const void* buffer, size_t size)

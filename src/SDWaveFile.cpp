@@ -163,14 +163,14 @@ int SDWaveFile::cue(long time)
 int SDWaveFile::begin()
 {
   if (!(*this)) {
-    return 1;
+    return 0;
   }
 
   _file = SD.open(_filename);
 
   _isPlaying = true;
 
-  return 0;
+  return 1;
 }
 
 int SDWaveFile::read(void* buffer, size_t size)
@@ -194,7 +194,7 @@ int SDWaveFile::reset()
 {
   cue(0);
 
-  return 0;
+  return 1;
 }
 
 void SDWaveFile::end()
