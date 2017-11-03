@@ -46,6 +46,8 @@ protected:
   int resetInput(AudioIn* input);
   void endInput(AudioIn* input);
 
+  void monoToStereo(void* buffer, size_t size, int bitsPerSample);
+
 private:
   void adjustVolume(void* buffer, size_t size, int bitsPerSample);
 

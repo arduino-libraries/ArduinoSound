@@ -62,6 +62,46 @@ void AudioOut::endInput(AudioIn* input)
   return input->end();
 }
 
+void AudioOut::monoToStereo(void* buffer, size_t size, int bitsPerSample)
+{
+  int samples = size / (bitsPerSample / 8);
+
+  if (bitsPerSample == 8) {
+    uint8_t* s = &((uint8_t*)buffer)[samples - 1];
+    uint8_t* d = &((uint8_t*)buffer)[samples * 2 - 1];
+
+    for (int i = 0; i < samples; i++) {
+      *d = *s;
+      d--;
+      *d = *s;
+      d--;
+      s--;
+    }
+  } else if (bitsPerSample == 16) {
+    int16_t* s = &((int16_t*)buffer)[samples - 1];
+    int16_t* d = &((int16_t*)buffer)[samples * 2 - 1];
+
+    for (int i = 0; i < samples; i++) {
+      *d = *s;
+      d--;
+      *d = *s;
+      d--;
+      s--;
+    }
+  } else if (bitsPerSample == 32) {
+    int32_t* s = &((int32_t*)buffer)[samples - 1];
+    int32_t* d = &((int32_t*)buffer)[samples * 2 - 1];
+
+    for (int i = 0; i < samples; i++) {
+      *d = *s;
+      d--;
+      *d = *s;
+      d--;
+      s--;
+    }
+  }
+}
+
 void AudioOut::adjustVolume(void* buffer, size_t size, int bitsPerSample)
 {
   int samples = size / (bitsPerSample / 8);

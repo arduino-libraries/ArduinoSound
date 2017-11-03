@@ -41,7 +41,7 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
     return 0;
   }
 
-  if (channels != 2) {
+  if (channels != 1 && channels != 2) {
     return 0;
   }
 
@@ -146,9 +146,16 @@ void AudioOutI2SClass::onTransmit()
     return;
   }
 
-  uint8_t data[512];
+  int channels = _input->channels();
 
-  int n = readInput(_input, data, sizeof(data));
+  uint8_t data[512];
+  size_t length = sizeof(data);
+
+  if (channels == 1) {
+    length /= 2;
+  }
+
+  int n = readInput(_input, data, length);
 
   if (n == 0) {
     if (!_loop) {
@@ -164,7 +171,13 @@ void AudioOutI2SClass::onTransmit()
     }
 
     // read the input (again)
-    n = readInput(_input, data, sizeof(data));
+    n = readInput(_input, data, length);
+  }
+
+  if (channels == 1) {
+    monoToStereo(data, n, _input->bitsPerSample());
+
+    n *= 2;
   }
 
   I2S.write(data, n);
