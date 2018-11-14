@@ -69,6 +69,7 @@ private:
   int _channels;
   long _frames;
   int _blockAlign;
+  uint32_t _dataOffset;
 };
 
 #endif

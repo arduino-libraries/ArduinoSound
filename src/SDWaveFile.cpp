@@ -18,14 +18,18 @@
 
 #include "SDWaveFile.h"
 
+struct SubChunkHeader {
+  uint32_t id;
+  uint32_t size;
+};
+
 // based on: http://soundfile.sapp.org/doc/WaveFormat/
 struct WaveFileHeader {
   uint32_t chunkId;
   uint32_t chunkSize;
   uint32_t format;
   struct {
-    uint32_t id;
-    uint32_t size;
+    struct SubChunkHeader header;
     uint16_t audioFormat;
     uint16_t numChannels;
     uint32_t sampleRate;
@@ -33,10 +37,7 @@ struct WaveFileHeader {
     uint16_t blockAlign;
     uint16_t bitsPerSample;
   } subChunk1;
-  struct {
-    uint32_t id;
-    uint32_t size;
-  } subChunk2;
+  struct SubChunkHeader subChunk2Header;
 } __attribute__((packed));
 
 SDWaveFile::SDWaveFile() : 
@@ -53,7 +54,8 @@ SDWaveFile::SDWaveFile(const char* filename) :
   _sampleRate(-1),
   _bitsPerSample(-1),
   _channels(-1),
-  _frames(-1)
+  _frames(-1),
+  _dataOffset(0)
 {
 
 }
@@ -129,8 +131,8 @@ long SDWaveFile::currentTime()
 
   uint32_t position = _file.position();
 
-  if (position >= sizeof(struct WaveFileHeader)) {
-    position -= sizeof(struct WaveFileHeader);
+  if (position >= _dataOffset) {
+    position -= _dataOffset;
   }
 
   return (position) / (_blockAlign * _sampleRate);
@@ -142,7 +144,7 @@ int SDWaveFile::cue(long time)
     return 1;
   }
 
-  long offset = (time * _blockAlign) - sizeof(struct WaveFileHeader);
+  long offset = (time * _blockAlign) - _dataOffset;
 
   if (offset < 0) {
     offset = 0;
@@ -180,7 +182,7 @@ int SDWaveFile::read(void* buffer, size_t size)
 
   if (position == 0) {
     // replace the header with 0's
-    memset(buffer, 0x00, sizeof(struct WaveFileHeader));
+    memset(buffer, 0x00, _dataOffset);
   }
 
   if (read) {
@@ -226,50 +228,81 @@ void SDWaveFile::readHeader()
   }
 
   struct WaveFileHeader header;
+  int headerSize;
+  int subChunk2Offset = 0;
+  struct SubChunkHeader sch;
 
-  if (_file.read(&header, sizeof(header)) != sizeof(header)) {
+  headerSize = sizeof(struct WaveFileHeader) - sizeof(header.subChunk2Header);
+  if (_file.read((void *)&header, headerSize) != headerSize) {
     _file.close();
     return;
   }
-  _file.close();
-
-  _headerRead = true;
 
   header.chunkId = __REV(header.chunkId);
   header.format = __REV(header.format);
-  header.subChunk1.id = __REV(header.subChunk1.id);
-  header.subChunk2.id = __REV(header.subChunk2.id);
+  header.subChunk1.header.id = __REV(header.subChunk1.header.id);
 
   if (header.chunkId != 0x52494646) { // "RIFF"
+     _file.close();
     return;
   }
 
   if ((fileSize - 8) != header.chunkSize) {
+     _file.close();
     return;
   }
 
   if (header.format != 0x57415645) { // "WAVE"
+     _file.close();
     return;
   }
 
-  if (header.subChunk1.id != 0x666d7420) { // "fmt "
+  if (header.subChunk1.header.id != 0x666d7420) { // "fmt "
+    _file.close();
     return;
   }
 
-  if (header.subChunk1.size != 16 || header.subChunk1.audioFormat != 1) {
-    // not PCM
+  if (header.subChunk1.header.size != 16 || header.subChunk1.audioFormat != 1) {
+    _file.close();
     return;
   }
 
-  if (header.subChunk2.id != 0x64617461) { // "data"
+  while (_file.available()) {
+    if (_file.read((void *)&(sch), sizeof(sch)) != sizeof(sch)) {
+      _file.close();
+      return;
+    }
+
+    sch.id = __REV(sch.id);
+
+    if (sch.id == 0x64617461) {
+      // found the data section
+      header.subChunk2Header.id = sch.id;
+      header.subChunk2Header.size = sch.size;
+      break;
+    }
+
+    // skip this header section
+    _file.seek(_file.position() + sch.size);
+    subChunk2Offset += (sizeof(sch) + sch.size);
+  }
+
+  if (header.subChunk2Header.id != 0x64617461) { // "data"
+    // no data section found
+    _file.close();
     return;
   }
+
+  _dataOffset = sizeof(struct WaveFileHeader) + subChunk2Offset;
+  _file.close();
+
+  _headerRead = true;
 
   _channels = header.subChunk1.numChannels;
   _sampleRate = header.subChunk1.sampleRate;
   _bitsPerSample = header.subChunk1.bitsPerSample;
   _blockAlign = header.subChunk1.blockAlign;
-  _frames = header.subChunk2.size / _blockAlign;
+  _frames = header.subChunk2Header.size / _blockAlign;
 
   _isValid = true;
 }
