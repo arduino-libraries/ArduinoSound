@@ -21,7 +21,9 @@
 
 #include <Arduino.h>
 
+#if !defined(ARM_MATH_CM0PLUS)
 #define ARM_MATH_CM0PLUS
+#endif
 #include <arm_math.h>
 
 #include "AudioAnalyzer.h"
