@@ -38,6 +38,8 @@ volume	KEYWORD2
 
 input	KEYWORD2
 
+setBufferSize	KEYWORD2
+
 #######################################
 # Constants (LITERAL1)
 #######################################

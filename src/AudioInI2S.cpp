@@ -16,8 +16,6 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#include <I2S.h>
-
 #include "AudioInI2S.h"
 
 AudioInI2SClass::AudioInI2SClass() :
@@ -72,6 +70,13 @@ int AudioInI2SClass::channels()
 {
   return 2;
 }
+
+#ifdef I2S_HAS_SET_BUFFER_SIZE
+void AudioInI2SClass::setBufferSize(int bufferSize)
+{
+  I2S.setBufferSize(bufferSize);
+}
+#endif
 
 int AudioInI2SClass::begin()
 {

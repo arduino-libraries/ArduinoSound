@@ -19,6 +19,8 @@
 #ifndef _AUDIO_OUT_I2S_INCLUDED
 #define _AUDIO_OUT_I2S_INCLUDED
 
+#include <I2S.h>
+
 #include "AudioOut.h"
 
 class AudioOutI2SClass : public AudioOut
@@ -37,6 +39,10 @@ public:
 
   virtual int isPlaying();
   virtual int isPaused();
+
+#ifdef I2S_HAS_SET_BUFFER_SIZE
+  void setBufferSize(int bufferSize);
+#endif
 
 private:
   int startPlayback(AudioIn& input, bool loop);
