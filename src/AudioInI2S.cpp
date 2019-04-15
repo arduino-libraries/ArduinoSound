@@ -99,9 +99,10 @@ int AudioInI2SClass::reset()
 void AudioInI2SClass::onReceive()
 {
   if (_callbackTriggered) {
-    uint8_t data[512];
+    size_t length = I2S.available();
+    uint8_t data[length];
 
-    read(data, sizeof(data));
+    read(data, length);
   }
 }
 
