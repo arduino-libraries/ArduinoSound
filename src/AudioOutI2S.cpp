@@ -16,8 +16,6 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#include <I2S.h>
-
 #include "AudioOutI2S.h"
 
 AudioOutI2SClass::AudioOutI2SClass() :
@@ -111,6 +109,13 @@ int AudioOutI2SClass::isPaused()
 {
   return _paused;
 }
+
+#ifdef I2S_HAS_SET_BUFFER_SIZE
+void AudioOutI2SClass::setBufferSize(int bufferSize)
+{
+  I2S.setBufferSize(bufferSize);
+}
+#endif
 
 int AudioOutI2SClass::startPlayback(AudioIn& input, bool loop)
 {

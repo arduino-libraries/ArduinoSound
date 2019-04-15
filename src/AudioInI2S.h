@@ -19,6 +19,8 @@
 #ifndef _AUDIO_IN_I2S_H_INCLUDED
 #define _AUDIO_IN_I2S_H_INCLUDED
 
+#include <I2S.h>
+
 #include "AudioIn.h"
 
 class AudioInI2SClass : public AudioIn
@@ -33,6 +35,10 @@ public:
   virtual long sampleRate();
   virtual int bitsPerSample();
   virtual int channels();
+
+#ifdef I2S_HAS_SET_BUFFER_SIZE
+  void setBufferSize(int bufferSize);
+#endif
 
 protected:
   virtual int begin();
