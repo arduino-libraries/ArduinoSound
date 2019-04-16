@@ -30,6 +30,9 @@ public:
   virtual ~AudioInI2SClass();
 
   int begin(long sampleRate, int bitsPerSample);
+#ifdef I2S_HAS_SET_BUFFER_SIZE
+  int begin(long sampleRate, int bitsPerSample, int bufferSize);
+#endif
   virtual void end();
 
   virtual long sampleRate();

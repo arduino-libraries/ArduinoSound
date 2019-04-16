@@ -47,6 +47,15 @@ int AudioInI2SClass::begin(long sampleRate, int bitsPerSample)
   return 1;
 }
 
+#ifdef I2S_HAS_SET_BUFFER_SIZE
+int AudioInI2SClass::begin(long sampleRate, int bitsPerSample, int bufferSize)
+{
+  setBufferSize(bufferSize);
+
+  return begin(sampleRate, bitsPerSample);
+}
+#endif
+
 void AudioInI2SClass::end()
 {
   _sampleRate = -1;
