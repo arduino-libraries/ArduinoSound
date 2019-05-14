@@ -16,8 +16,6 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#include <I2S.h>
-
 #include "AudioOutI2S.h"
 
 AudioOutI2SClass::AudioOutI2SClass() :
@@ -78,11 +76,12 @@ int AudioOutI2SClass::resume()
   _paused = false;
 
   // play some silence to get things going
-  uint8_t silence[512];
-  memset(silence, 0x00, sizeof(silence));
+  size_t length = I2S.availableForWrite();
+  uint8_t silence[length];
+  memset(silence, 0x00, length);
 
-  I2S.write(silence, sizeof(silence));
-  I2S.write(silence, sizeof(silence));
+  I2S.write(silence, length);
+  I2S.write(silence, length);
 
   return 1;
 }
@@ -111,6 +110,13 @@ int AudioOutI2SClass::isPaused()
   return _paused;
 }
 
+#ifdef I2S_HAS_SET_BUFFER_SIZE
+void AudioOutI2SClass::setBufferSize(int bufferSize)
+{
+  I2S.setBufferSize(bufferSize);
+}
+#endif
+
 int AudioOutI2SClass::startPlayback(AudioIn& input, bool loop)
 {
   if (_input) {
@@ -131,11 +137,12 @@ int AudioOutI2SClass::startPlayback(AudioIn& input, bool loop)
   _input = &input;
   _loop = loop;
 
-  uint8_t silence[512];
-  memset(silence, 0x00, sizeof(silence));
+  size_t length = I2S.availableForWrite();
+  uint8_t silence[length];
+  memset(silence, 0x00, length);
 
-  I2S.write(silence, sizeof(silence));
-  I2S.write(silence, sizeof(silence));
+  I2S.write(silence, length);
+  I2S.write(silence, length);
 
   return 1;
 }
@@ -148,8 +155,8 @@ void AudioOutI2SClass::onTransmit()
 
   int channels = _input->channels();
 
-  uint8_t data[512];
-  size_t length = sizeof(data);
+  size_t length = I2S.availableForWrite();
+  uint8_t data[length];
 
   if (channels == 1) {
     length /= 2;

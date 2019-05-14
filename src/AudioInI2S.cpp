@@ -16,8 +16,6 @@
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA
 */
 
-#include <I2S.h>
-
 #include "AudioInI2S.h"
 
 AudioInI2SClass::AudioInI2SClass() :
@@ -49,6 +47,15 @@ int AudioInI2SClass::begin(long sampleRate, int bitsPerSample)
   return 1;
 }
 
+#ifdef I2S_HAS_SET_BUFFER_SIZE
+int AudioInI2SClass::begin(long sampleRate, int bitsPerSample, int bufferSize)
+{
+  setBufferSize(bufferSize);
+
+  return begin(sampleRate, bitsPerSample);
+}
+#endif
+
 void AudioInI2SClass::end()
 {
   _sampleRate = -1;
@@ -72,6 +79,13 @@ int AudioInI2SClass::channels()
 {
   return 2;
 }
+
+#ifdef I2S_HAS_SET_BUFFER_SIZE
+void AudioInI2SClass::setBufferSize(int bufferSize)
+{
+  I2S.setBufferSize(bufferSize);
+}
+#endif
 
 int AudioInI2SClass::begin()
 {
@@ -99,9 +113,10 @@ int AudioInI2SClass::reset()
 void AudioInI2SClass::onReceive()
 {
   if (_callbackTriggered) {
-    uint8_t data[512];
+    size_t length = I2S.available();
+    uint8_t data[length];
 
-    read(data, sizeof(data));
+    read(data, length);
   }
 }
 
