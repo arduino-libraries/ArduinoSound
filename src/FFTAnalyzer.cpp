@@ -62,7 +62,12 @@ int FFTAnalyzer::read(int spectrum[], int size)
   }
 
   if (_bitsPerSample == 16) {
-    arm_q15_to_q31((q15_t*)_spectrumBuffer, (q31_t*)spectrum, size);
+    q31_t* dst = (q31_t*)spectrum;
+    q15_t* src = (q15_t*)_spectrumBuffer;
+
+    for (int i = 0; i < size; i++) {
+      *dst++ = *src++;
+    }
   } else {
     memcpy(spectrum, _spectrumBuffer, sizeof(int) * size);
   }
@@ -183,7 +188,7 @@ void FFTAnalyzer::update(const void* buffer, size_t size)
   if (_bitsPerSample == 16) {
     arm_rfft_q15(&_S15, (q15_t*)_sampleBuffer, (q15_t*)_fftBuffer);
 
-    arm_cmplx_mag_q15((q15_t*)_spectrumBuffer, (q15_t*)_fftBuffer, _length);
+    arm_cmplx_mag_q15((q15_t*)_fftBuffer, (q15_t*)_spectrumBuffer, _length);
   } else {
     arm_rfft_q31(&_S31, (q31_t*)_sampleBuffer, (q31_t*)_fftBuffer);
 
