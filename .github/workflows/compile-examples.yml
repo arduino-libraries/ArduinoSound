@@ -7,7 +7,16 @@ jobs:
    strategy:
      matrix:
        fqbn: [
+         "arduino:samd:arduino_zero_native"
          "arduino:samd:mkrzero"
+         "arduino:samd:mkr1000"
+         "arduino:samd:mkrwifi1010"
+         "arduino:samd:mkrwan1300"
+         "arduino:samd:mkrwan1310"
+         "arduino:samd:mkrnb1500"
+         "arduino:samd:mkrgsm1400"
+         "arduino:samd:mkrfox1200"
+         "arduino:samd:nano_33_iot"
        ]
 
    steps:
