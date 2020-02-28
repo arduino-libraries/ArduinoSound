@@ -77,7 +77,7 @@ int AudioOutI2SClass::resume()
 
   // play some silence to get things going
   size_t length = I2S.availableForWrite();
-  uint8_t silence[length];
+  uint8_t silence[length+1];
   memset(silence, 0x00, length);
 
   I2S.write(silence, length);
