@@ -49,8 +49,9 @@ void loop() {
   if (amplitudeAnalyzer.available()) {
     // read the new amplitude
     int amplitude = amplitudeAnalyzer.read();
-
-    // print out the amplititude to the serial monitor
-    Serial.println(amplitude);
+    //dB relative to full scale
+    int dpFS = 20 * log10(abs(amplitude));
+    // print out the decibel to the serial monitor
+    Serial.println(dpFS);
   }
 }
