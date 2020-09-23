@@ -178,7 +178,7 @@ int SDWaveFile::begin()
 int SDWaveFile::read(void* buffer, size_t size)
 {
   uint32_t position = _file.position();
-  int read = _file.read(buffer, size);
+  int read = _file.read((uint8_t*) buffer, size);
 
   if (position == 0) {
     // replace the header with 0's
@@ -233,7 +233,7 @@ void SDWaveFile::readHeader()
   struct SubChunkHeader sch;
 
   headerSize = sizeof(struct WaveFileHeader) - sizeof(header.subChunk2Header);
-  if (_file.read((void *)&header, headerSize) != headerSize) {
+  if (_file.read((uint8_t *)&header, headerSize) != headerSize) {
     _file.close();
     return;
   }
@@ -268,7 +268,7 @@ void SDWaveFile::readHeader()
   }
 
   while (_file.available()) {
-    if (_file.read((void *)&(sch), sizeof(sch)) != sizeof(sch)) {
+    if (_file.read((uint8_t *)&(sch), sizeof(sch)) != sizeof(sch)) {
       _file.close();
       return;
     }

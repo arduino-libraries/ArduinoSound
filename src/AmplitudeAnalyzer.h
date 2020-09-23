@@ -21,8 +21,12 @@
 
 #include <Arduino.h>
 
-#define ARM_MATH_CM0PLUS
-#include <arm_math.h>
+#ifdef ESP_PLATFORM
+  #include <math.h>
+#else
+  #define ARM_MATH_CM0PLUS
+  #include <arm_math.h>
+#endif
 
 #include "AudioAnalyzer.h"
 
@@ -38,6 +42,10 @@ public:
 protected:
   virtual int configure(AudioIn* input);
   virtual void update(const void* buffer, size_t size);
+  #ifdef ESP_PLATFORM
+    void rms_16b(uint16_t* buffer, uint32_t blockSize, uint16_t* analysis);
+    void rms_32b(uint32_t* buffer, uint32_t blockSize, uint32_t* analysis);
+  #endif
 
 private:
   int _bitsPerSample;

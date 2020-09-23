@@ -19,8 +19,13 @@
 #ifndef _AUDIO_OUT_I2S_INCLUDED
 #define _AUDIO_OUT_I2S_INCLUDED
 
-#include <I2S.h>
+#ifdef ESP_PLATFORM
+  #include "driver/i2s.h"
+#else
+  #include <I2S.h>
+#endif
 
+#include <cstring>
 #include "AudioOut.h"
 
 class AudioOutI2SClass : public AudioOut
@@ -28,6 +33,14 @@ class AudioOutI2SClass : public AudioOut
 public:
   AudioOutI2SClass();
   virtual ~AudioOutI2SClass();
+
+  #if defined ESP_PLATFORM
+    #if defined ESP32
+      int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_out_pin=22, const int esp32_i2s_port_number=0);
+    #elif defined ESP32S2
+      int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_out_pin=22);
+    #endif
+  #endif
 
   virtual int canPlay(AudioIn& input);
   virtual int play(AudioIn& input);
@@ -55,6 +68,9 @@ private:
   AudioIn* _input;
   bool _loop;
   bool _paused;
+  #if defined ESP_PLATFORM
+    int _esp32_i2s_port_number;
+  #endif
 };
 
 extern AudioOutI2SClass AudioOutI2S;

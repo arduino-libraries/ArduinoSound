@@ -62,8 +62,13 @@ int FFTAnalyzer::read(int spectrum[], int size)
   }
 
   if (_bitsPerSample == 16) {
-    q31_t* dst = (q31_t*)spectrum;
-    q15_t* src = (q15_t*)_spectrumBuffer;
+    #ifdef ESP_PLATFORM
+        uint32_t* dst = (uint32_t*)spectrum;
+        uint16_t* src = (uint16_t*)_spectrumBuffer;
+    #else
+      q31_t* dst = (q31_t*)spectrum;
+      q15_t* src = (q15_t*)_spectrumBuffer;
+    #endif
 
     for (int i = 0; i < size; i++) {
       *dst++ = *src++;
@@ -91,13 +96,23 @@ int FFTAnalyzer::configure(AudioIn* input)
   }
 
   if (bitsPerSample == 16) {
-    if (ARM_MATH_SUCCESS != arm_rfft_init_q15(&_S15, _length, 0, 1)) {
-      return 0;
-    }
+    #ifdef ESP_PLATFORM
+      // FFT using 16-bit fixed point
+      if (ESP_OK != dsps_fft2r_init_sc16(NULL, _length)) {
+    #else
+      if (ARM_MATH_SUCCESS != arm_rfft_init_q15(&_S15, _length, 0, 1)) {
+    #endif
+        return 0;
+      }
   } else {
-    if (ARM_MATH_SUCCESS != arm_rfft_init_q31(&_S31, _length, 0, 1)) {
-      return 0;
-    }
+    #ifdef ESP_PLATFORM
+      // FFT using 32-bit floating point
+      if (ESP_OK != dsps_fft2r_init_fc32(NULL, _length)) {
+    #else
+      if (ARM_MATH_SUCCESS != arm_rfft_init_q31(&_S31, _length, 0, 1)) {
+    #endif
+        return 0;
+      }
   }
 
   _bitsPerSample = bitsPerSample;
@@ -184,16 +199,34 @@ void FFTAnalyzer::update(const void* buffer, size_t size)
   } else {
     memcpy(newSamples, buffer, size);
   }
+  #ifdef ESP_PLATFORM
+    if (_bitsPerSample == 16) {
+      dsps_fft2r_sc16_ae32_((int16_t*)_sampleBuffer, _length,  (int16_t*)&_length); // FFT using 16-bit fixed point optimized for ESP32
 
-  if (_bitsPerSample == 16) {
-    arm_rfft_q15(&_S15, (q15_t*)_sampleBuffer, (q15_t*)_fftBuffer);
+      dsps_mul_f32_ae32((float *) _fftBuffer, (float *) _fftBuffer+sizeof(uint16_t), (float *)_spectrumBuffer, _length/2,  2,  2, 1);
+    } else {
 
-    arm_cmplx_mag_q15((q15_t*)_fftBuffer, (q15_t*)_spectrumBuffer, _length);
-  } else {
-    arm_rfft_q31(&_S31, (q31_t*)_sampleBuffer, (q31_t*)_fftBuffer);
+      dsps_fft2r_fc32_ae32_(ieee_float_array((uint32_t *)_sampleBuffer, _length), _length, NULL); // FFT using 32-bit floating point optimized for ESP32
 
-    arm_cmplx_mag_q31((q31_t*)_fftBuffer, (q31_t*) _spectrumBuffer, _length);
-  }
+      dsps_mul_f32_ae32(ieee_float_array((uint32_t*)_fftBuffer, _length), ieee_float_array((uint32_t*)_fftBuffer+sizeof(uint32_t), _length-1), (float*) _spectrumBuffer, _length/2,  2,  2, 1);
+    }
 
+  #else
+    if (_bitsPerSample == 16) {
+      arm_rfft_q15(&_S15, (q15_t*)_sampleBuffer, (q15_t*)_fftBuffer);
+
+      arm_cmplx_mag_q15((q15_t*)_fftBuffer, (q15_t*)_spectrumBuffer, _length);
+    } else {
+      arm_rfft_q31(&_S31, (q31_t*)_sampleBuffer, (q31_t*)_fftBuffer);
+
+      arm_cmplx_mag_q31((q31_t*)_fftBuffer, (q31_t*) _spectrumBuffer, _length);
+    }
+  #endif
   _available = 1;
+}
+
+float* ieee_float_array(uint32_t* f, int length){
+    float ret[length];
+    memcpy(&ret, &f, sizeof(float)*length);
+    return ret;
 }

@@ -22,6 +22,13 @@
 #include <Arduino.h>
 #include <SD.h>
 
+#ifdef ESP_PLATFORM
+  #define __REV __builtin_bswap32
+#else
+  #define ARM_MATH_CM0PLUS
+  #include <arm_math.h>
+#endif
+
 #include "SoundFile.h"
 
 class SDWaveFile : public SoundFile

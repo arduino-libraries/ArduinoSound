@@ -19,7 +19,11 @@
 #ifndef _AUDIO_IN_I2S_H_INCLUDED
 #define _AUDIO_IN_I2S_H_INCLUDED
 
-#include <I2S.h>
+#ifdef ESP_PLATFORM
+  #include "driver/i2s.h"
+#else
+  #include <I2S.h>
+#endif
 
 #include "AudioIn.h"
 
@@ -29,10 +33,17 @@ public:
   AudioInI2SClass();
   virtual ~AudioInI2SClass();
 
-  int begin(long sampleRate, int bitsPerSample);
-#ifdef I2S_HAS_SET_BUFFER_SIZE
-  int begin(long sampleRate, int bitsPerSample, int bufferSize);
-#endif
+  #if defined ESP_PLATFORM && defined ESP32
+	  //int begin(long sampleRate, int bitsPerSample, const int bit_clock_pin, const int word_select_pin, const int data_in_pin, const int esp32_i2s_port_number);
+   int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_out_pin=22, const int esp32_i2s_port_number=0);
+  #elif defined ESP_PLATFORM && defined ESP32S2
+	  int begin(long sampleRate, int bitsPerSample, const int bit_clock_pin, const int word_select_pin, const int data_in_pin);
+  #else
+    int begin(long sampleRate, int bitsPerSample);
+    #ifdef I2S_HAS_SET_BUFFER_SIZE
+      int begin(long sampleRate, int bitsPerSample, int bufferSize);
+    #endif // ifdef I2S_HAS_SET_BUFFER_SIZE
+  #endif // ifdef ESP_PLATFORM
   virtual void end();
 
   virtual long sampleRate();
@@ -57,6 +68,9 @@ private:
   long _sampleRate;
   int _bitsPerSample;
   bool _callbackTriggered;
+  #ifdef ESP_PLATFORM
+    int _esp32_i2s_port_number;
+  #endif
 };
 
 extern AudioInI2SClass AudioInI2S;

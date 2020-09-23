@@ -18,16 +18,18 @@
 
 #include "AudioOutI2S.h"
 
-AudioOutI2SClass::AudioOutI2SClass() :
+  AudioOutI2SClass::AudioOutI2SClass() :
   _input(NULL),
   _loop(false),
   _paused(false)
+  #ifdef ESP_PLATFORM
+    ,_esp32_i2s_port_number(0)
+  #endif
 {
 }
 
 AudioOutI2SClass::~AudioOutI2SClass()
 {
-
 }
 
 int AudioOutI2SClass::canPlay(AudioIn& input)
@@ -45,6 +47,38 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
 
   return 1;
 }
+
+#if defined ESP_PLATFORM
+  #if defined ESP32
+    int AudioOutI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=26*/, const int word_select_pin/*=25*/, const int data_out_pin/*=22*/, const int esp32_i2s_port_number/*=0*/){
+      _esp32_i2s_port_number = esp32_i2s_port_number;
+  #elif defined ESP_PLATFORM && defined ESP32S2
+    int AudioOutI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=26*/, const int word_select_pin/*=25*/, const int data_out_pin/*=22*/) :
+  #endif // ESP_chip model
+    i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
+    static const i2s_config_t i2s_config = {
+          .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+          .sample_rate = sampleRate, // default 44100,
+          .bits_per_sample = (i2s_bits_per_sample_t) bitsPerSample, // default 16,
+          .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+          .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+          .intr_alloc_flags = 0, // default interrupt priority
+          .dma_buf_count = 8,
+          .dma_buf_len = 64,
+          .use_apll = false
+      };
+      static const i2s_pin_config_t pin_config = {
+          .bck_io_num = bit_clock_pin,
+          .ws_io_num = word_select_pin,
+          .data_out_num = data_out_pin,
+          .data_in_num = I2S_PIN_NO_CHANGE
+      };
+      i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, 0, NULL);   //install and start i2s driver
+      i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, &pin_config);
+      i2s_set_sample_rates((i2s_port_t) _esp32_i2s_port_number, 22050); //set sample rates
+      return 0;
+  }
+#endif  // ESP_PLATFORM
 
 int AudioOutI2SClass::play(AudioIn& input)
 {
@@ -76,12 +110,22 @@ int AudioOutI2SClass::resume()
   _paused = false;
 
   // play some silence to get things going
-  size_t length = I2S.availableForWrite();
+  #ifdef ESP_PLATFORM
+    size_t length = 1; // TODO : ESP does not have availability info - decide the constant
+  #else
+    size_t length = I2S.availableForWrite();
+  #endif
+
   uint8_t silence[length];
   memset(silence, 0x00, length);
 
-  I2S.write(silence, length);
-  I2S.write(silence, length);
+  #ifdef ESP_PLATFORM
+    i2s_write((i2s_port_t) _esp32_i2s_port_number, silence, length, NULL, 0);
+    i2s_write((i2s_port_t) _esp32_i2s_port_number, silence, length, NULL, 0);
+  #else
+    I2S.write(silence, length);
+    I2S.write(silence, length);
+  #endif
 
   return 1;
 }
@@ -95,7 +139,11 @@ int AudioOutI2SClass::stop()
   endInput(_input);
   _input = NULL;
 
-  I2S.end();
+  #ifdef ESP_PLATFORM
+    i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
+  #else
+    I2S.end();
+  #endif
 
   return 1;
 }
@@ -122,7 +170,30 @@ int AudioOutI2SClass::startPlayback(AudioIn& input, bool loop)
   if (_input) {
     stop();
   }
+#ifdef ESP_PLATFORM
+// TODO rewrite for ESP
+  /*
+  I2S.onTransmit(AudioOutI2SClass::onI2STransmit);
 
+  if (!I2S.begin(I2S_PHILIPS_MODE, input.sampleRate(), input.bitsPerSample())) {
+    return 0;
+  }
+  */
+
+  if (!beginInput(&input)) {
+	i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
+    return 0;
+  }
+
+  _input = &input;
+  _loop = loop;
+
+  size_t length = 8;
+  uint8_t silence[length];
+  memset(silence, 0x00, length);
+
+  i2s_write((i2s_port_t) _esp32_i2s_port_number, silence, length, NULL, 0);
+#else
   I2S.onTransmit(AudioOutI2SClass::onI2STransmit);
 
   if (!I2S.begin(I2S_PHILIPS_MODE, input.sampleRate(), input.bitsPerSample())) {
@@ -143,7 +214,7 @@ int AudioOutI2SClass::startPlayback(AudioIn& input, bool loop)
 
   I2S.write(silence, length);
   I2S.write(silence, length);
-
+#endif
   return 1;
 }
 
@@ -154,8 +225,11 @@ void AudioOutI2SClass::onTransmit()
   }
 
   int channels = _input->channels();
-
+#ifdef ESP_PLATFORM
+  size_t length = 4;
+#else
   size_t length = I2S.availableForWrite();
+#endif
   uint8_t data[length];
 
   if (channels == 1) {
@@ -173,7 +247,11 @@ void AudioOutI2SClass::onTransmit()
 
     // reset the input
     if (!resetInput(_input)) {
-      I2S.end();
+      #ifdef ESP_PLATFORM
+	    i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
+      #else
+        I2S.end();
+      #endif
       return;
     }
 
@@ -186,8 +264,11 @@ void AudioOutI2SClass::onTransmit()
 
     n *= 2;
   }
-
+#ifdef ESP_PLATFORM
+  i2s_write((i2s_port_t) _esp32_i2s_port_number, data, n, NULL, 0);
+#else
   I2S.write(data, n);
+#endif
 }
 
 void AudioOutI2SClass::onI2STransmit()
