@@ -24,6 +24,9 @@
 
 AudioOut::AudioOut() :
   _volume(50)
+#ifdef ESP_PLATFORM
+  ,_esp32_i2s_port_number(0)
+#endif
 {
 }
 

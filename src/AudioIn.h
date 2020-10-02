@@ -33,6 +33,10 @@ public:
   virtual long sampleRate() = 0; // Returns the sample rate
   virtual int bitsPerSample() = 0; // returns the bits per sample
   virtual int channels() = 0; // Returns the number of channels
+  #ifdef ESP_PLATFORM
+    int get_esp32_i2s_port_number();
+  #endif
+
 
 protected:
   void samplesRead(void* buffer, size_t size);
@@ -52,6 +56,11 @@ protected:
 
 private:
   AudioAnalyzer* _analyzer;
+
+#ifdef ESP_PLATFORM
+protected:
+  int _esp32_i2s_port_number;
+#endif
 };
 
 #endif

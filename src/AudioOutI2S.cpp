@@ -22,9 +22,6 @@
   _input(NULL),
   _loop(false),
   _paused(false)
-  #ifdef ESP_PLATFORM
-    ,_esp32_i2s_port_number(0)
-  #endif
 {
 }
 
@@ -50,14 +47,16 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
 
 #if defined ESP_PLATFORM
   #if defined ESP32
-    int AudioOutI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=26*/, const int word_select_pin/*=25*/, const int data_out_pin/*=22*/, const int esp32_i2s_port_number/*=0*/){
+    int AudioOutI2SClass::esp32I2sBegin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=26*/, const int word_select_pin/*=25*/, const int data_out_pin/*=22*/, const bool use_dac/*=true*/, const int esp32_i2s_port_number/*=0*/){
       _esp32_i2s_port_number = esp32_i2s_port_number;
   #elif defined ESP_PLATFORM && defined ESP32S2
-    int AudioOutI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=26*/, const int word_select_pin/*=25*/, const int data_out_pin/*=22*/) :
-  #endif // ESP_chip model
+    int AudioOutI2SClass::esp32I2sBegin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=26*/, const int word_select_pin/*=25*/, const int data_out_pin/*=22*/, const bool use_dac/*=true*/) :
+  #endif // ESP chip model
     i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
+    int i2s_mode = I2S_MODE_MASTER | I2S_MODE_TX;
+    if(use_dac == true){i2s_mode |= I2S_MODE_DAC_BUILT_IN;}
     static const i2s_config_t i2s_config = {
-          .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX),
+             .mode = (i2s_mode_t) i2s_mode,
           .sample_rate = sampleRate, // default 44100,
           .bits_per_sample = (i2s_bits_per_sample_t) bitsPerSample, // default 16,
           .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
@@ -73,10 +72,13 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
           .data_out_num = data_out_pin,
           .data_in_num = I2S_PIN_NO_CHANGE
       };
-      i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, 0, NULL);   //install and start i2s driver
+      int ret = i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, 0, NULL);   //install and start i2s driver
+      if(ret != ESP_OK){
+        return 0;
+      }
       i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, &pin_config);
       i2s_set_sample_rates((i2s_port_t) _esp32_i2s_port_number, 22050); //set sample rates
-      return 0;
+      return 1; // OK
   }
 #endif  // ESP_PLATFORM
 
@@ -171,14 +173,9 @@ int AudioOutI2SClass::startPlayback(AudioIn& input, bool loop)
     stop();
   }
 #ifdef ESP_PLATFORM
-// TODO rewrite for ESP
-  /*
-  I2S.onTransmit(AudioOutI2SClass::onI2STransmit);
-
-  if (!I2S.begin(I2S_PHILIPS_MODE, input.sampleRate(), input.bitsPerSample())) {
+  if (!esp32I2sBegin(input.sampleRate(), input.bitsPerSample())) {
     return 0;
   }
-  */
 
   if (!beginInput(&input)) {
 	i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver

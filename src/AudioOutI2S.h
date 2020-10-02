@@ -36,9 +36,9 @@ public:
 
   #if defined ESP_PLATFORM
     #if defined ESP32
-      int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_out_pin=22, const int esp32_i2s_port_number=0);
+      int esp32I2sBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_out_pin=22, const bool use_dac=true, const int esp32_i2s_port_number=0);
     #elif defined ESP32S2
-      int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_out_pin=22);
+      int esp32I2sBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_out_pin=22, const bool use_dac=true);
     #endif
   #endif
 
@@ -68,9 +68,6 @@ private:
   AudioIn* _input;
   bool _loop;
   bool _paused;
-  #if defined ESP_PLATFORM
-    int _esp32_i2s_port_number;
-  #endif
 };
 
 extern AudioOutI2SClass AudioOutI2S;

@@ -82,7 +82,7 @@ void AmplitudeAnalyzer::update(const void* buffer, size_t size)
 }
 
 #ifdef ESP_PLATFORM
-void rms_16b(uint16_t* buffer, uint32_t blockSize, uint16_t* analysis){
+void AmplitudeAnalyzer::rms_16b(uint16_t* buffer, uint32_t blockSize, uint16_t* analysis){
   uint32_t sum = 0;		                           /* accumulator */
   uint16_t in;                                   /* temporary variable to store the input value */
   uint32_t blkCnt;                               /* loop counter */
@@ -104,7 +104,7 @@ void rms_16b(uint16_t* buffer, uint32_t blockSize, uint16_t* analysis){
 	*analysis = (uint16_t)sqrt(sum / blockSize);
 }
 
-void rms_32b(uint32_t* buffer, uint32_t blockSize, uint32_t* analysis){
+void AmplitudeAnalyzer::rms_32b(uint32_t* buffer, uint32_t blockSize, uint32_t* analysis){
   uint64_t sum = 0;                              /* accumulator */
   uint32_t in;                                   /* temporary variable to store the input value */
   uint32_t blkCnt;                               /* loop counter */

@@ -34,10 +34,9 @@ public:
   virtual ~AudioInI2SClass();
 
   #if defined ESP_PLATFORM && defined ESP32
-	  //int begin(long sampleRate, int bitsPerSample, const int bit_clock_pin, const int word_select_pin, const int data_in_pin, const int esp32_i2s_port_number);
-   int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_out_pin=22, const int esp32_i2s_port_number=0);
+	 int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_in_pin=22, const bool use_adc=true, const int esp32_i2s_port_number=0);
   #elif defined ESP_PLATFORM && defined ESP32S2
-	  int begin(long sampleRate, int bitsPerSample, const int bit_clock_pin, const int word_select_pin, const int data_in_pin);
+   int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_in_pin=22, const bool use_adc=true);
   #else
     int begin(long sampleRate, int bitsPerSample);
     #ifdef I2S_HAS_SET_BUFFER_SIZE
@@ -63,14 +62,12 @@ private:
   void onReceive();
 
   static void onI2SReceive();
+  static void onI2SReceiveStatic(void * arg);
 
 private:
   long _sampleRate;
   int _bitsPerSample;
   bool _callbackTriggered;
-  #ifdef ESP_PLATFORM
-    int _esp32_i2s_port_number;
-  #endif
 };
 
 extern AudioInI2SClass AudioInI2S;

@@ -19,13 +19,18 @@
 #include "AudioAnalyzer.h"
 
 #include "AudioIn.h"
+#include "Arduino.h"// only for debug prints
 
 AudioIn::AudioIn() :
   _analyzer(NULL)
+  #if defined ESP_PLATFORM
+   , _esp32_i2s_port_number(0)
+  #endif
 {
 }
 
 AudioIn::~AudioIn()
+
 {
 }
 
@@ -46,7 +51,15 @@ int AudioIn::setAnalyzer(AudioAnalyzer* analyzer)
 
 void AudioIn::samplesRead(void* buffer, size_t size)
 {
+  Serial.print("AudioIn::samplesRead... _analyzer=");
+  Serial.println((int)_analyzer);
   if (_analyzer) {
     _analyzer->update(buffer, size);
   }
+}
+
+
+int AudioIn::get_esp32_i2s_port_number()
+{
+  return _esp32_i2s_port_number;
 }

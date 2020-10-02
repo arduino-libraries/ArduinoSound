@@ -53,6 +53,11 @@ private:
 
 private:
   int _volume;
+
+  #ifdef ESP_PLATFORM
+protected:
+  int _esp32_i2s_port_number;
+#endif
 };
 
 #endif
