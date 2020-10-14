@@ -63,6 +63,7 @@ private:
   void* _fftBuffer;
   void* _spectrumBuffer;
   #ifdef ESP_PLATFORM
+    uint8_t* _data_buffer;
     int _esp32_i2s_port_number;
   #endif
 };

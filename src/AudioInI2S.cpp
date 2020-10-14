@@ -33,15 +33,15 @@ AudioInI2SClass::~AudioInI2SClass()
 
 #if defined ESP_PLATFORM
   #if defined ESP32
-    int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=26*/, const int word_select_pin/*=25*/, const int data_in_pin/*=22*/, const bool use_adc/*=true*/, const int esp32_i2s_port_number/*=0*/)
+    int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_in_pin/*=26*/ /*, const bool use_adc=true*/, const int esp32_i2s_port_number/*=0*/)
     {
       _esp32_i2s_port_number = esp32_i2s_port_number;
   #elif defined ESP32S2
-    int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=26*/, const int word_select_pin/*=25*/, const int data_in_pin/*=22*/, const bool use_adc/*=true*/)
+    int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_in_pin/*=26*//*, const bool use_adc=true*/)
     {
   #endif //ESP 32 or 32S2
-    int i2s_mode = I2S_MODE_SLAVE | I2S_MODE_RX;
-    if(use_adc == true){i2s_mode |= I2S_MODE_ADC_BUILT_IN;}
+    int i2s_mode = I2S_MODE_SLAVE | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN;
+    //if(use_adc == true){i2s_mode |= I2S_MODE_ADC_BUILT_IN;}
     static const i2s_config_t i2s_config = {
 	  .mode = (i2s_mode_t) i2s_mode ,
 	  .sample_rate =  sampleRate, // default 44100,
@@ -59,13 +59,16 @@ AudioInI2SClass::~AudioInI2SClass()
 	    .data_out_num = I2S_PIN_NO_CHANGE,
 	    .data_in_num = data_in_pin
 	};
-	Serial.println("in lib: install");
+	Serial.println("AudioInI2SClass::begin : installing...");
 	if (ESP_OK != i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, 0, NULL)){
-	  Serial.println("in lib: install failed");
+	  Serial.println("AudioInI2SClass::begin : install failed");
 		return 0;
 	}
+	Serial.println("AudioInI2SClass::begin : install Ok; setting pins...");
 	i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, &pin_config);
+	Serial.println("AudioInI2SClass::begin : pins set; setting sample rates...");
   i2s_set_sample_rates((i2s_port_t) _esp32_i2s_port_number, 22050); //set sample rates
+  Serial.println("AudioInI2SClass::begin : sample rates set - trigger read...");
 #else
   int AudioInI2SClass::begin(long sampleRate, int bitsPerSample)
   {
@@ -97,6 +100,7 @@ AudioInI2SClass::~AudioInI2SClass()
 
     // trigger a read to kick things off
     i2s_read((i2s_port_t) esp32_i2s_port_number, &dummy_buffer, 0, &bytes_read, 0); // do we really need this?
+    Serial.println("AudioInI2SClass::begin : after read; return 1; // OK");
   #else
     // add the receiver callback
     I2S.onReceive(&(AudioInI2SClass::onI2SReceive));

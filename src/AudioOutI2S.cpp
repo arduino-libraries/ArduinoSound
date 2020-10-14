@@ -47,10 +47,10 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
 
 #if defined ESP_PLATFORM
   #if defined ESP32
-    int AudioOutI2SClass::esp32I2sBegin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=26*/, const int word_select_pin/*=25*/, const int data_out_pin/*=22*/, const bool use_dac/*=true*/, const int esp32_i2s_port_number/*=0*/){
+    int AudioOutI2SClass::outBegin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_out_pin/*=35*/, const bool use_dac/*=true*/, const int esp32_i2s_port_number/*=0*/){
       _esp32_i2s_port_number = esp32_i2s_port_number;
   #elif defined ESP_PLATFORM && defined ESP32S2
-    int AudioOutI2SClass::esp32I2sBegin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=26*/, const int word_select_pin/*=25*/, const int data_out_pin/*=22*/, const bool use_dac/*=true*/) :
+    int AudioOutI2SClass::outBegin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_out_pin/*=35*/, const bool use_dac/*=true*/) :
   #endif // ESP chip model
     i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
     int i2s_mode = I2S_MODE_MASTER | I2S_MODE_TX;
@@ -173,7 +173,7 @@ int AudioOutI2SClass::startPlayback(AudioIn& input, bool loop)
     stop();
   }
 #ifdef ESP_PLATFORM
-  if (!esp32I2sBegin(input.sampleRate(), input.bitsPerSample())) {
+  if (!outBegin(input.sampleRate(), input.bitsPerSample())) {
     return 0;
   }
 

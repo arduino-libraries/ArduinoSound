@@ -25,14 +25,12 @@
 #ifndef __ES8388_H__
 #define __ES8388_H__
 
+#include "Arduino.h"
 #include "AudioInI2S.h"
 #include "AudioOutI2S.h"
 #include "esxxx_common.h"
 #include "audio_hal.h"
-
-//#include "esp_types.h"
-//#include "driver/i2c.h"
-//#include "board.h"
+#include <Wire.h> // I2C config connection
 
 /* ES8388 address */
 #define ES8388_ADDR 0x20  /*!< 0x22:CE=1;0x20:CE=0*/
@@ -99,45 +97,31 @@
 #define ES8388_DACCONTROL29     0x33
 #define ES8388_DACCONTROL30     0x34
 
+typedef void *i2c_bus_handle_t;
 
+// ES8388 adc(GPIO_NUM_21,GPIO_NUM_23,GPIO_NUM_18);
 class ES8388 : public AudioInI2SClass, public AudioOutI2SClass
 {
+private:
+  int _PA_ENABLE_GPIO = -1;
+  int _i2c_scl_pin = -1;
+  int _i2c_sda_pin = -1;
+  audio_hal_codec_config_t _cfg;
+  bool _i2c_initialized = false;
 public:
-  ES8388();
+  ES8388(int PA_ENABLE_GPIO, int i2c_scl_pin, int i2c_sda_pin);
   virtual ~ES8388();
-  //bool begin();
-
-  /* chip specific */
-  bool setFormat(es_module_t mod, es_i2s_fmt_t cfg);
-  bool setClock(es_i2s_clock_t cfg);
-  bool setBPS(es_module_t mode, es_bits_length_t bit_per_sample);
-  //bool start();
-  //bool stop();
 
   /* Audio In */
-  /*
   #if defined ESP_PLATFORM && defined ESP32
-    int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_in_pin=22, const bool use_adc=true, const int esp32_i2s_port_number=0);
+    int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_in_pin=26, const int esp32_i2s_port_number=0);
   #elif defined ESP_PLATFORM && defined ESP32S2
-    int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_in_pin=22, const bool use_adc=true);
-  #else
-    int begin(long sampleRate, int bitsPerSample);
-    #ifdef I2S_HAS_SET_BUFFER_SIZE
-      int begin(long sampleRate, int bitsPerSample, int bufferSize);
-    #endif // ifdef I2S_HAS_SET_BUFFER_SIZE
+    int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_in_pin=26;
   #endif // ifdef ESP_PLATFORM
   virtual void end();
 
-  virtual long sampleRate();
-  virtual int bitsPerSample();
-  virtual int channels();
-
-  virtual int begin();
-  virtual int read(void* buffer, size_t size);
-  virtual int reset();
-*/
-
   /* Audio Out */
+  /*
   #if defined ESP_PLATFORM
     #if defined ESP32
       int esp32I2sBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_out_pin=22, const bool use_dac=true, const int esp32_i2s_port_number=0);
@@ -145,17 +129,8 @@ public:
       int esp32I2sBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_out_pin=22, const bool use_dac=true);
     #endif
   #endif
+      */
 
-  virtual int canPlay(AudioIn& input);
-  virtual int play(AudioIn& input);
-  virtual int loop(AudioIn& input);
-
-  virtual int pause();
-  virtual int resume();
-  virtual int stop();
-
-  virtual int isPlaying();
-  virtual int isPaused();
 
   /* Original functions from ESP-ADF */
 
@@ -182,14 +157,14 @@ esp_err_t es8388_deinit(void);
 /**
  * @brief Configure ES8388 I2S format
  *
- * @param mod:  set ADC or DAC or both
- * @param cfg:   ES8388 I2S format
+ * @param mode:  set ADC or DAC or both
+ * @param fmt:   ES8388 I2S format
  *
  * @return
  *     - ESP_OK
  *     - ESP_FAIL
  */
-esp_err_t es8388_config_fmt(es_module_t mod, es_i2s_fmt_t cfg);
+esp_err_t es8388_config_fmt(es_module_t mode, audio_hal_iface_format_t fmt);
 
 /**
  * @brief Configure I2s clock in MSATER mode
@@ -365,6 +340,12 @@ esp_err_t es8388_ctrl_state(audio_hal_codec_mode_t mode, audio_hal_ctrl_t ctrl_s
  */
 void es8388_pa_power(bool enable);
 
+private:
+esp_err_t es_write_reg(uint8_t slave_addr, uint8_t reg_add, uint8_t data);
+esp_err_t es_read_reg(uint8_t reg_add, uint8_t *p_data);
+int i2c_init();
+int i2c_init(int i2c_scl_pin, int i2c_sda_pin);
+int es8388_set_adc_dac_volume(int mode, int volume, int dot);
 }; // class ES8388
 
 #endif //__ES8388_H__

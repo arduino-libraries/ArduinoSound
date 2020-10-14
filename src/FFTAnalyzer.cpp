@@ -29,6 +29,11 @@ FFTAnalyzer::FFTAnalyzer(int length) :
   _fftBuffer(NULL),
   _spectrumBuffer(NULL)
 {
+#ifdef ESP_PLATFORM
+  if (_data_buffer == NULL){
+    _data_buffer = (uint8_t*) malloc(length);
+  }
+#endif
 }
 
 FFTAnalyzer::~FFTAnalyzer()
@@ -44,6 +49,12 @@ FFTAnalyzer::~FFTAnalyzer()
   if (_spectrumBuffer) {
     free(_spectrumBuffer);
   }
+
+#ifdef ESP_PLATFORM
+  if (_data_buffer) {
+      free(_data_buffer);
+    }
+#endif
 }
 
 int FFTAnalyzer::available()
@@ -51,14 +62,19 @@ int FFTAnalyzer::available()
   #ifdef ESP_PLATFORM
     //Serial.print("ESP read available= "); Serial.println((int)i2s_available((i2s_port_t)_esp32_i2s_port_number));
     //esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_read, TickType_t ticks_to_wait)ů
-    size_t buffer_byte_size = _length / 2;
-    uint8_t data_buffer[buffer_byte_size];
-    size_t bytes_read;
-    i2s_read((i2s_port_t) _esp32_i2s_port_number, data_buffer, buffer_byte_size, &bytes_read, 0);
-    //Serial.print("ESP read available: bytes_read= "); Serial.println((int)bytes_read);
+    static size_t bytes_read;
+    //Serial.flush();
+    //Serial.print("read() i2sport="); Serial.println(_esp32_i2s_port_number);
+    //Serial.print("read() _length="); Serial.println(_length);
+    i2s_read((i2s_port_t) _esp32_i2s_port_number, &_data_buffer, _length, &bytes_read, 1); // without error
+    //i2s_read((i2s_port_t) _esp32_i2s_port_number, &_data_buffer, _length, &bytes_read, 0); // watchdog triggered
+    Serial.print("ESP read available: bytes_read= "); Serial.println((int)bytes_read);
+    //Serial.print((int)bytes_read);
+    //Serial.print(" ");
+    //Serial.flush();
     if(bytes_read > 0){
-      Serial.print("ESP read available: bytes_read= "); Serial.println((int)bytes_read);
-      update(data_buffer, bytes_read);
+      Serial.println("ESP update ");
+      update(&_data_buffer, bytes_read);
     }
   #endif
   return _available;
