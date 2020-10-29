@@ -45,6 +45,8 @@ public:
 protected:
   virtual int configure(AudioIn* input);
   virtual void update(const void* buffer, size_t size);
+  void cmplx_mag(float *pSrc, float *pDst, uint32_t numSamples);
+  void real_to_complex(float* input, int input_length, float* output);
   void ieee_float_array(uint32_t* input, int length, float* output);
 
 private:

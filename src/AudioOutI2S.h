@@ -36,9 +36,11 @@ public:
 
   #if defined ESP_PLATFORM
     #if defined ESP32
-      int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=35, const bool use_dac=true, const int esp32_i2s_port_number=0);
+      //int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=35, const bool use_dac=true, const int esp32_i2s_port_number=0);
+  int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=26, const int esp32_i2s_port_number=0);
     #elif defined ESP32S2
-      int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=35, const bool use_dac=true);
+      //int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=35, const bool use_dac=true);
+  int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=26);
     #endif
   #endif
 
@@ -57,6 +59,9 @@ public:
   void setBufferSize(int bufferSize);
 #endif
 
+  // Manual data transmit
+  virtual void transmit();
+
 private:
   int startPlayback(AudioIn& input, bool loop);
 
@@ -64,8 +69,10 @@ private:
 
   static void onI2STransmit();
 
+public:
+  AudioIn* _input; // this belongs to private
 private:
-  AudioIn* _input;
+  //AudioIn* _input; // this belongs here
   bool _loop;
   bool _paused;
 };

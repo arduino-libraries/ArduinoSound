@@ -40,14 +40,26 @@ AudioInI2SClass::~AudioInI2SClass()
     int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_in_pin/*=26*//*, const bool use_adc=true*/)
     {
   #endif //ESP 32 or 32S2
-    int i2s_mode = I2S_MODE_SLAVE | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN;
+    int i2s_mode = I2S_MODE_MASTER | I2S_MODE_RX;// | I2S_MODE_ADC_BUILT_IN;
+
+    Serial.print("clk pin = "); Serial.println(bit_clock_pin);
+    Serial.print("ws pin = "); Serial.println(word_select_pin);
+    Serial.print("ESP in < codec out pin = "); Serial.println(data_in_pin);
+
     //if(use_adc == true){i2s_mode |= I2S_MODE_ADC_BUILT_IN;}
     static const i2s_config_t i2s_config = {
 	  .mode = (i2s_mode_t) i2s_mode ,
 	  .sample_rate =  sampleRate, // default 44100,
 	  .bits_per_sample = (i2s_bits_per_sample_t) bitsPerSample, // default 16,
 	  .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-	  .communication_format = I2S_COMM_FORMAT_STAND_I2S,
+
+	  .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
+	  //.communication_format = I2S_COMM_FORMAT_STAND_I2S, /*!< I2S communication I2S Philips standard, data launch at second BCK*/
+	  //.communication_format = I2S_COMM_FORMAT_STAND_MSB, /*!< I2S communication MSB alignment standard, data launch at first BCK*/
+	  //.communication_format = I2S_COMM_FORMAT_STAND_PCM_SHORT, /*!< PCM Short standard*/
+	  //.communication_format = I2S_COMM_FORMAT_STAND_PCM_LONG, /*!< PCM Long standard*/
+	  //.communication_format = I2S_COMM_FORMAT_STAND_MAX, /*!< standard max*/
+
 	  .intr_alloc_flags = 0, // default interrupt priority
 	  .dma_buf_count = 8,
 	  .dma_buf_len = 64,
@@ -60,6 +72,9 @@ AudioInI2SClass::~AudioInI2SClass()
 	    .data_in_num = data_in_pin
 	};
 	Serial.println("AudioInI2SClass::begin : installing...");
+	Serial.print("ESP data_in_pin < codec out ");Serial.println(data_in_pin);
+	Serial.print("sampleRate ");Serial.println(sampleRate);
+	Serial.print("bitsPerSample ");Serial.println(bitsPerSample);
 	if (ESP_OK != i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, 0, NULL)){
 	  Serial.println("AudioInI2SClass::begin : install failed");
 		return 0;
@@ -67,8 +82,7 @@ AudioInI2SClass::~AudioInI2SClass()
 	Serial.println("AudioInI2SClass::begin : install Ok; setting pins...");
 	i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, &pin_config);
 	Serial.println("AudioInI2SClass::begin : pins set; setting sample rates...");
-  i2s_set_sample_rates((i2s_port_t) _esp32_i2s_port_number, 22050); //set sample rates
-  Serial.println("AudioInI2SClass::begin : sample rates set - trigger read...");
+  //i2s_set_sample_rates((i2s_port_t) _esp32_i2s_port_number, 22050); //set sample rates
 #else
   int AudioInI2SClass::begin(long sampleRate, int bitsPerSample)
   {
@@ -98,9 +112,10 @@ AudioInI2SClass::~AudioInI2SClass()
     Serial.println("foo");
     */
 
+    //Serial.println("AudioInI2SClass::begin : sample rates set - trigger read...");
     // trigger a read to kick things off
-    i2s_read((i2s_port_t) esp32_i2s_port_number, &dummy_buffer, 0, &bytes_read, 0); // do we really need this?
-    Serial.println("AudioInI2SClass::begin : after read; return 1; // OK");
+    //i2s_read((i2s_port_t) esp32_i2s_port_number, &dummy_buffer, 0, &bytes_read, 100); // do we really need this?
+    //Serial.println("AudioInI2SClass::begin : after read; return 1; // OK");
   #else
     // add the receiver callback
     I2S.onReceive(&(AudioInI2SClass::onI2SReceive));
@@ -164,7 +179,7 @@ int AudioInI2SClass::begin()
 
 int AudioInI2SClass::read(void* buffer, size_t size)
 {
-  Serial.println(" void AudioInI2SClass::read()");
+  //Serial.println(" void AudioInI2SClass::read()");
   int read;
   #ifdef ESP_PLATFORM
   	i2s_read((i2s_port_t) _esp32_i2s_port_number, buffer, (size_t) size, (size_t*) &read, 0);
@@ -210,10 +225,12 @@ void AudioInI2SClass::onI2SReceive()
 }
 
 // Compatibility workaround for C code
+/*
 void AudioInI2SClass::onI2SReceiveStatic(void* arg)
 {
   reinterpret_cast<AudioInI2SClass*>(arg)->onReceive();
 }
+*/
 
 /*
 int AudioInI2SClass::ESP32Available(){

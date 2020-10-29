@@ -32,6 +32,10 @@
 #include "audio_hal.h"
 #include <Wire.h> // I2C config connection
 
+//#ifdef __cplusplus
+extern "C" {
+//#endif
+
 /* ES8388 address */
 #define ES8388_ADDR 0x20  /*!< 0x22:CE=1;0x20:CE=0*/
 
@@ -108,29 +112,34 @@ private:
   int _i2c_sda_pin = -1;
   audio_hal_codec_config_t _cfg;
   bool _i2c_initialized = false;
+  int _bit_clock_pin;
+  int _word_select_pin;
+  int _codec_data_in_pin;
+  int _codec_data_out_pin;
+  TwoWire _wire;
 public:
-  ES8388(int PA_ENABLE_GPIO, int i2c_scl_pin, int i2c_sda_pin);
+  //ES8388(int PA_ENABLE_GPIO, int i2c_scl_pin, int i2c_sda_pin, int bit_clock_pin, int word_select_pin, int data_in_pin);
+  ES8388(int PA_ENABLE_GPIO, TwoWire wire=Wire, int bit_clock_pin=5, int word_select_pin=25, int codec_data_in_pin=26, int codec_data_out_pin=35);
   virtual ~ES8388();
 
   /* Audio In */
-  #if defined ESP_PLATFORM && defined ESP32
-    int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_in_pin=26, const int esp32_i2s_port_number=0);
-  #elif defined ESP_PLATFORM && defined ESP32S2
-    int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_in_pin=26;
-  #endif // ifdef ESP_PLATFORM
+  #ifdef CONFIG_IDF_TARGET_ESP32
+    //int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_in_pin=35, const int esp32_i2s_port_number=0);
+  int begin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false, int esp32_i2s_port_number=0);
+  #elif CONFIG_IDF_TARGET_ESP32S2
+    //int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_in_pin=35);
+  int begin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false);
+  #endif // ifdef ESP
   virtual void end();
 
   /* Audio Out */
-  /*
-  #if defined ESP_PLATFORM
-    #if defined ESP32
-      int esp32I2sBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_out_pin=22, const bool use_dac=true, const int esp32_i2s_port_number=0);
-    #elif defined ESP32S2
-      int esp32I2sBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=26, const int word_select_pin=25, const int data_out_pin=22, const bool use_dac=true);
-    #endif
+  #ifdef CONFIG_IDF_TARGET_ESP32
+    //int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=26, const int esp32_i2s_port_number=0);
+  int outBegin(long sampleRate=44100, int bitsPerSample=16, const int esp32_i2s_port_number=0);
+  #elif CONFIG_IDF_TARGET_ESP32S2
+    //int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=26);
+  int outBegin(long sampleRate=44100, int bitsPerSample=16);
   #endif
-      */
-
 
   /* Original functions from ESP-ADF */
 
@@ -340,12 +349,32 @@ esp_err_t es8388_ctrl_state(audio_hal_codec_mode_t mode, audio_hal_ctrl_t ctrl_s
  */
 void es8388_pa_power(bool enable);
 
+/**
+ * @brief Set volume in range 0.0 ~ 100.0 %
+ *
+ * @param float number of volume in % (range 0.0 to 100.0)
+ *
+ * @return
+ *      - void
+ *
+ * Sets volume for both input and output channels of ES8388 in its native db format
+ * and sets volume of parent object
+ */
+void volume(float level);
+
+int es8388_set_adc_dac_volume(int mode, int volume, int dot);
+
+virtual int read(void* buffer, size_t size);
+
 private:
 esp_err_t es_write_reg(uint8_t slave_addr, uint8_t reg_add, uint8_t data);
 esp_err_t es_read_reg(uint8_t reg_add, uint8_t *p_data);
 int i2c_init();
 int i2c_init(int i2c_scl_pin, int i2c_sda_pin);
-int es8388_set_adc_dac_volume(int mode, int volume, int dot);
 }; // class ES8388
+
+//#ifdef __cplusplus
+}
+//#endif
 
 #endif //__ES8388_H__

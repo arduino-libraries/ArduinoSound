@@ -54,6 +54,10 @@ public:
 
   virtual int cue(long time);
 
+  int initWrite(int bitsPerSample, long sampleRate);
+  int writeData(void* data, size_t bytesToWrite, bool finished);
+  void purgeTmp();
+
 protected:
   virtual int begin();
   virtual int read(void* buffer, size_t size);
@@ -62,6 +66,7 @@ protected:
 
 private:
   void readHeader();
+  int finishWavWrite(uint32_t numOfBytes);
 
 private:
   bool _headerRead;
@@ -70,6 +75,7 @@ private:
 
   File _file;
   String _filename;
+  String _tmp_filename;
 
   long _sampleRate;
   int _bitsPerSample;
