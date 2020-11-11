@@ -40,14 +40,21 @@ public:
   virtual ~FFTAnalyzer();
 
   int available();
-  int read(int spectrum[], int size);
+  int read(int spectrum[], int size); // original
+  int readFloat(float spectrum[], int size);
 
 protected:
   virtual int configure(AudioIn* input);
   virtual void update(const void* buffer, size_t size);
-  void cmplx_mag(float *pSrc, float *pDst, uint32_t numSamples);
-  void real_to_complex(float* input, int input_length, float* output);
-  void ieee_float_array(uint32_t* input, int length, float* output);
+  void real_int16_to_complex_int16(int16_t* input, int length, int16_t* output);
+  void real_uint32_to_complex_float(uint32_t* input, int length, float* output);
+  //void real_to_complex(float* input, int input_length, float* output);
+  //void ieee_float_array(uint32_t* input, int length, float* output);
+  void float_cmplx_mag(float *pSrc, float *pDst, uint32_t numSamples);
+  //void float_cmplx_mag(float *pSrc, int32_t *pDst, uint32_t numSamples);
+  void int16_cmplx_mag(int16_t *pSrc, float *pDst, uint32_t numSamples);
+  //void int16_cmplx_mag(int16_t *pSrc, int16_t *pDst, uint32_t numSamples);
+  //void cmplx_mag(float *pSrc, float *pDst, uint32_t numSamples);
 
 private:
   int _length;
@@ -66,7 +73,8 @@ private:
   void* _spectrumBuffer;
   #ifdef ESP_PLATFORM
     uint8_t* _data_buffer;
-    int _esp32_i2s_port_number;
+    //int _esp32_i2s_port_number;
+    AudioIn* _input;
   #endif
 };
 

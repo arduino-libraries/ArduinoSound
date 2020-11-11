@@ -53,7 +53,9 @@ AudioInI2SClass::~AudioInI2SClass()
 	  .bits_per_sample = (i2s_bits_per_sample_t) bitsPerSample, // default 16,
 	  .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
 
-	  .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
+	  //.communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_I2S_MSB),
+	  //.communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_STAND_PCM_SHORT),
+	  .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_STAND_PCM_LONG),
 	  //.communication_format = I2S_COMM_FORMAT_STAND_I2S, /*!< I2S communication I2S Philips standard, data launch at second BCK*/
 	  //.communication_format = I2S_COMM_FORMAT_STAND_MSB, /*!< I2S communication MSB alignment standard, data launch at first BCK*/
 	  //.communication_format = I2S_COMM_FORMAT_STAND_PCM_SHORT, /*!< PCM Short standard*/
@@ -188,7 +190,7 @@ int AudioInI2SClass::read(void* buffer, size_t size)
   #endif
 
   if (read) {
-    samplesRead(buffer, read);    
+    samplesRead(buffer, read);
   }
 
   return read;

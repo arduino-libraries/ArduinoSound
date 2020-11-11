@@ -33,6 +33,7 @@ public:
   virtual long sampleRate() = 0; // Returns the sample rate
   virtual int bitsPerSample() = 0; // returns the bits per sample
   virtual int channels() = 0; // Returns the number of channels
+  virtual int read(void* buffer, size_t size) = 0;
   #ifdef ESP_PLATFORM
     int get_esp32_i2s_port_number();
   #endif
@@ -45,7 +46,6 @@ protected:
   friend class AudioOut;
 
   virtual int begin() = 0;
-  virtual int read(void* buffer, size_t size) = 0;
   virtual int reset() = 0;
   virtual void end() = 0;
 

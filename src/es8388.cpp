@@ -114,37 +114,22 @@ ES8388::~ES8388()
     .bits = bits};
 
   if(use_external_mic){
-    //_cfg.adc_input = AUDIO_HAL_ADC_INPUT_DIFFERENCE; /*!< mic input to both channels of adc */
+    //ESP_LOGI(ES_TAG, "Use AUX_IN");
     _cfg.adc_input = AUDIO_HAL_ADC_INPUT_LINE2; // AUX_IN for external source
   }else{
+    //ESP_LOGI(ES_TAG, "Use on-board mics");
     _cfg.adc_input = AUDIO_HAL_ADC_INPUT_LINE1; // Lyrat onboard microphones
   }
 
-  //_cfg.codec_mode = AUDIO_HAL_CODEC_MODE_ENCODE;  /*!< select adc */
-  //_cfg.codec_mode = AUDIO_HAL_CODEC_MODE_DECODE;      /*!< select dac */
-  _cfg.codec_mode = AUDIO_HAL_CODEC_MODE_BOTH;        /*!< select both adc and dac */
-  //_cfg.codec_mode = AUDIO_HAL_CODEC_MODE_LINE_IN;     /*!< set adc channel */ // - works
-
+  _cfg.codec_mode = AUDIO_HAL_CODEC_MODE_ENCODE;
   _cfg.i2s_iface = i2s_iface;  /*!< set I2S interface configuration */
 
   es8388_init(&_cfg);
   es8388_config_i2s(_cfg.codec_mode, &i2s_iface);
 
-/*
- typedef enum {
-    ADC_INPUT_MIN = -1,
-    ADC_INPUT_LINPUT1_RINPUT1 = 0x00,
-    ADC_INPUT_MIC1  = 0x05,
-    ADC_INPUT_MIC2  = 0x06,
-    ADC_INPUT_LINPUT2_RINPUT2 = 0x50,
-    ADC_INPUT_DIFFERENCE = 0xf0,
-    ADC_INPUT_MAX,
-} es_adc_input_t;
-*/
-  es8388_config_adc_input(ADC_INPUT_LINPUT1_RINPUT1); // Lyrat onboard microphones
   es8388_start(ES_MODULE_ADC); // Start ES8388 codec chip in A/D converter mode
-
-  es8388_set_voice_volume(100); // TODO will it work ?
+  //es8388_set_adc_dac_volume(ES_MODULE_ADC_DAC,0,0);
+  //es8388_set_voice_volume(100); // TODO do we need it? probably not
 
   return 1; // OK
 }

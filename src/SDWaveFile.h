@@ -21,6 +21,7 @@
 
 #include <Arduino.h>
 #include <SD.h>
+#include "SD_MMC.h"
 
 #ifdef ESP_PLATFORM
   #define __REV __builtin_bswap32
@@ -83,6 +84,7 @@ private:
   long _frames;
   int _blockAlign;
   uint32_t _dataOffset;
+  uint32_t _dataSize;
 };
 
 #endif

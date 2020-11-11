@@ -177,28 +177,59 @@ int SDWaveFile::begin()
 
 int SDWaveFile::read(void* buffer, size_t size)
 {
+  //Serial.print("SDWaveFile::read: _file =");Serial.println(_file);
+  if (!_file){
+    //Serial.println("SDWaveFile::read: WARNING - file not opened! Opening...");
+    _file = SD.open(_filename);
+    if (!_file){
+      //Serial.println("SDWaveFile::read: ERROR - file cannot be opened!");
+      return -1;
+    }
+    //Serial.println("Ok opened");
+  }
+
   uint32_t position = _file.position();
+  //Serial.print("SDWaveFile::read: cursor position =");Serial.println(position);
+  //Serial.print("SDWaveFile::read: up to size =");Serial.println(size);
   int read = _file.read((uint8_t*) buffer, size);
-  //Serial.print("SDWaveFile::read: read=");Serial.println(read);
-  //Serial.print("SDWaveFile::read: position=");Serial.println(position);
+  //Serial.print("SDWaveFile::read: actual read =");Serial.println(read);
+  if (read > 0) {
+/*
+  Serial.println("Read buffer ");
+
+    for(int i = 0; i < read; ++i){
+      Serial.print(((uint8_t *)buffer)[i]);Serial.print(" ");
+    }
+    Serial.println("");
+*/
   if (position == 0) {
     // replace the header with 0's
-    Serial.println("SDWaveFile::read: memset(buffer, 0x00, _dataOffset);");
-    Serial.print("buffer=");Serial.println((int)buffer);
-    Serial.print("_dataOffset=");Serial.println(_dataOffset);
-    Serial.print("size=");Serial.println(size);
-
-    memset(buffer, 0x00, _dataOffset); // TODO: original - causes error
-    //memset(buffer, 0x00, size);
+    //Serial.println("SDWaveFile::read: position == 0 => replace the header with 0's");
+    memset(buffer, 0x00, _dataOffset);
   }
-  //Serial.println("SDWaveFile::read: memset done; check read number");
+/*
+  Serial.flush();
+  Serial.println("Reading buffer ");
+  for(int i = 0; i < read; ++i){
+    Serial.print(((uint8_t *)buffer)[i]);Serial.print(" ");
+  }
+  Serial.println("");
+*/
 
-  if (read) {
+     // data here ok
+  //if (read) {
     //Serial.println("SDWaveFile::read: samplesRead(buffer, read);");
     samplesRead(buffer, read);
   }
-
-  //Serial.print("SDWaveFile::read: return read=");Serial.println(read);
+// data here fucked up, but NOT always :-/
+/*
+   Serial.println("Reading buffer ");
+   for(int i = 0; i < read/2; ++i){
+     Serial.print(((uint8_t *)buffer)[i]);Serial.print(" ");
+   }
+   Serial.println("");
+*/
+  //Serial.print("SDWaveFile::read: return read=");Serial.println(read);Serial.flush();
   return read;
 }
 
@@ -233,6 +264,8 @@ void SDWaveFile::readHeader()
 
   uint32_t fileSize = _file.size();
 
+  Serial.print("fileSize = ");  Serial.println(fileSize);
+
   if (fileSize < sizeof(struct WaveFileHeader)) {
     _file.close();
     Serial.println("file smaller than header size");
@@ -258,6 +291,7 @@ void SDWaveFile::readHeader()
   if (header.chunkId != 0x52494646) { // "RIFF"
     _file.close();
     Serial.println("not RIFF");
+    Serial.print("header.chunkId = "); Serial.println(header.chunkId);
     return;
   }
 
@@ -335,11 +369,11 @@ void SDWaveFile::readHeader()
 
 int SDWaveFile::initWrite(int bitsPerSample, long sampleRate){
   Serial.println("SDWaveFile::initWrite");
-
+  _dataSize = 0;
   // Try to create temporary file. If it fails exit with failure
   int max_tmp_tries = 5;
   do{
-    _tmp_filename = "/tmp_" + String(millis()); // generate tmp file name
+    _tmp_filename = "/tmp_" + String(millis() % 1000) + String(max_tmp_tries); // generate tmp file name
     --max_tmp_tries;
     Serial.print("Check file \"");Serial.print(_tmp_filename);Serial.println("\"");
   }while(SD.exists(_tmp_filename) && max_tmp_tries > 0);
@@ -349,7 +383,8 @@ int SDWaveFile::initWrite(int bitsPerSample, long sampleRate){
   }
   Serial.println("Open file");
   _file = SD.open(_tmp_filename, FILE_WRITE);
-  if(_file == NULL){
+  Serial.print("after open _file = "); Serial.println(_file);
+  if(_file == false){
     return 0; // ERR
   }
 
@@ -360,7 +395,6 @@ int SDWaveFile::initWrite(int bitsPerSample, long sampleRate){
 }
 
 int SDWaveFile::writeData(void* data, size_t bytesToWrite, bool finished){
-  static uint32_t dataSize = 0; // counter for written bytes
   uint32_t written = 0;
   //Serial.print("write to pos "); Serial.println(_file.position());
   // TODO __REV samples
@@ -380,21 +414,23 @@ int SDWaveFile::writeData(void* data, size_t bytesToWrite, bool finished){
     written = _file.write((uint8_t *)data,bytesToWrite);
   }
   */
-  Serial.println("");
+  /*
+  Serial.print("Writing ");  Serial.println(bytesToWrite);
   for(int i = 0; i < bytesToWrite; ++i){
     Serial.print(((uint8_t *)data)[i]);Serial.print(" ");
   }
   Serial.println("");
+  */
 
   written = _file.write((uint8_t *)data,bytesToWrite);
-  dataSize += written;
+  _dataSize += written;
   if(bytesToWrite != written){
     Serial.println("ERROR: bytesToWrite != written");
     return 0; // ERR
   }
-  //Serial.print("Written ");Serial.print(dataSize);Serial.println(" Bytes so far..");
+  //Serial.print("Written ");Serial.print(_dataSize);Serial.println(" Bytes so far..");
   if(finished){ // write header and move data from tmp file
-    return finishWavWrite(dataSize);
+    return finishWavWrite(_dataSize);
   }
   return 1; // OK
 }
@@ -437,6 +473,13 @@ int SDWaveFile::finishWavWrite(uint32_t numOfBytes){
   uint32_t read, written; // How many Bytes were actually read and written
   uint32_t offset = 0; // Offset for reading tmp file
 
+  // only for debug
+  /*
+  _file = SD.open(_tmp_filename, FILE_READ);
+  Serial.print("tmp file size = "); Serial.println(_file.size());
+  _file.close();
+*/
+
   do{
     // load buffer from tmp file
     _file = SD.open(_tmp_filename, FILE_READ);
@@ -445,15 +488,21 @@ int SDWaveFile::finishWavWrite(uint32_t numOfBytes){
     read = _file.read(buffer, buffer_bytes);
     //Serial.print("read ");Serial.println(read);
     _file.close();
-
+/*
+    Serial.print("Moving buffer; read=");  Serial.println(read);
+    for(int i = 0; i < read; ++i){
+      Serial.print(buffer[i]);Serial.print(" ");
+    }
+    Serial.println("");
+*/
     //move buffer to actual file
-    _file = SD.open(_filename, FILE_WRITE);
-    _file.seek(offset+44);
+    _file = SD.open(_filename, FILE_WRITE); // Should open in append mode, but does not!!!
+    _file.seek(offset+44); // Because append mode doesn't work move to (offset + header_length)
     //Serial.print("write to "); Serial.println(_file.position());
     written = _file.write(buffer, read);
     //Serial.print("written "); Serial.println(written);
     _file.close();
-    if(read == 0 || read != written){
+    if(read != written){
       SD.remove(_tmp_filename); // remove tmp file
       Serial.println("read and written mismatch! Return with error");
       return 0; // ERROR
@@ -463,14 +512,40 @@ int SDWaveFile::finishWavWrite(uint32_t numOfBytes){
     //Serial.print("bytesMoved "); Serial.print(bytesMoved); Serial.print(" of total numOfBytes "); Serial.println(numOfBytes);
   }while(bytesMoved < numOfBytes);
 
-  //_file.close();
   SD.remove(_tmp_filename); // remove tmp file
   Serial.println("finishWavWrite() Done");
   return 1; // OK
 }
 
 // TODO void purgeTmp();
-void purgeTmp(){
-
-
+void SDWaveFile::purgeTmp(){
+  File root = SD.open("/");
+  char filename_buff[32];
+  char sub_name[6];
+  while (true) {
+    File entry =  root.openNextFile();
+    if (! entry) {
+      // no more files
+      break;
+    }
+    int len = strlen(entry.name());
+    /*
+    Serial.println("");
+    Serial.print("Check file "); Serial.println(entry.name());
+    Serial.print("Filename len = "); Serial.println(len);
+    */
+    memset(filename_buff,0,32);
+    memcpy(filename_buff, entry.name(),(len > 32) ? 32 : len);
+    sub_name[5] = 0;
+    memcpy(sub_name, entry.name(), 5);
+    /*
+    Serial.print("filename_buff "); Serial.println(String(filename_buff));
+    Serial.print("sub_name "); Serial.println(sub_name);
+    */
+    entry.close();
+    if(strcmp(sub_name, "/TMP_") == 0){ // If filename starts with "tmp_" delete it
+      //Serial.print("Deleting tmp file "); Serial.println(entry.name());
+      SD.remove(String(filename_buff));
+    }
+  }
 }

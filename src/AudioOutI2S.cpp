@@ -329,6 +329,13 @@ void AudioOutI2SClass::onTransmit()
   size_t bytes_written;
   //Serial.println("i2s_write");
   //((bits+8)/16)*SAMPLE_PER_CYCLE*4))
+/*
+     Serial.println("Play buffer ");
+     for(int i = 0; i < n; ++i){
+       Serial.print(data[i]);Serial.print(" ");
+     }
+     Serial.println("");
+*/
   i2s_write((i2s_port_t) _esp32_i2s_port_number, data, n, &bytes_written, 100); // original - distorted audio
 
   //Serial.print("bytes_written="); Serial.println(bytes_written);
