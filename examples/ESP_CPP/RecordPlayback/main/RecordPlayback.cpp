@@ -30,7 +30,6 @@
 
 // filename of wave file to record into and playback
 const char filename[] = "/test.wav"; // note: the filename must start with '/' (slash)
-const char techfilename[] = "/tech.WAV"; // debug
 
 // variable representing the Wave File
 SDWaveFile waveFile;
@@ -83,7 +82,6 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
       Serial.println("ERROR: While writing");
       return ret;
     }
-    //waveFile.writeData(finished);
     timeElapsed = millis() - startMillis;
   } // write loop
   return ret;
@@ -172,35 +170,13 @@ void setup() {
   Serial.println("initialization done.");
 }
 
-#include <SD.h> // debug
 void loop() {
-  /*
-  // just to check that read and write works correctly and error i see is elsewhere
-  char foo[] = "/foo.wav";
-  uint8_t buffer[16] = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
-  File _file2 = SD.open(foo, FILE_WRITE);
-  _file2.write(buffer, 16);
-  _file2.close();
-
-  uint8_t buffer2[16];
-  _file2 = SD.open(foo, FILE_READ);
-  _file2.read(buffer2, 16);
-  _file2.close();
-  Serial.println("Moving buffer; read=");
-  for(int i = 0; i < 16; ++i){
-    Serial.print(buffer2[i]);Serial.print(" ");
-  }
-  Serial.println("");
-  delay(100000);
-  */
   bool use_external_mic = true;
   int recordDuration = 5; // number of seconds to keep recording
   if(!record_wav_file(filename, recordDuration, 16, 8000, use_external_mic)){
-  //if(!record_wav_file(filename, recordDuration, 16, 22050, use_external_mic)){
     Serial.println("Record failed!");
   }else{ // Recording succeeded - proceed to playback
     if(!play_wav_file(filename)){
-    //if(!play_wav_file(techfilename)){
       Serial.println("Playback failed!");
     }
   }

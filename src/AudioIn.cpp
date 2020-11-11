@@ -51,13 +51,8 @@ int AudioIn::setAnalyzer(AudioAnalyzer* analyzer)
 
 void AudioIn::samplesRead(void* buffer, size_t size)
 {
-  //Serial.print("AudioIn::samplesRead... _analyzer=");
-  //Serial.println((int)_analyzer);
   if (_analyzer) {
     _analyzer->update(buffer, size);
-  }else{
-    //Serial.println("HEY! there is no _analyzer set!");
-    //Serial.println("... so do nothing ¯\\_(ツ)_/¯");
   }
 }
 

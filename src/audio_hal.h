@@ -24,9 +24,6 @@
 
 #ifndef _AUDIO_HAL_H_
 #define _AUDIO_HAL_H_
-//#include "freertos/FreeRTOS.h"
-//#include "freertos/semphr.h"
-//#include "freertos/task.h"
 #include "audio_error.h"
 
 #ifdef __cplusplus

@@ -32,9 +32,9 @@
 #include "audio_hal.h"
 #include <Wire.h> // I2C config connection
 
-//#ifdef __cplusplus
+#ifdef __cplusplus
 extern "C" {
-//#endif
+#endif
 
 /* ES8388 address */
 #define ES8388_ADDR 0x20  /*!< 0x22:CE=1;0x20:CE=0*/
@@ -118,27 +118,22 @@ private:
   int _codec_data_out_pin;
   TwoWire _wire;
 public:
-  //ES8388(int PA_ENABLE_GPIO, int i2c_scl_pin, int i2c_sda_pin, int bit_clock_pin, int word_select_pin, int data_in_pin);
   ES8388(int PA_ENABLE_GPIO, TwoWire wire=Wire, int bit_clock_pin=5, int word_select_pin=25, int codec_data_in_pin=26, int codec_data_out_pin=35);
   virtual ~ES8388();
 
   /* Audio In */
   #ifdef CONFIG_IDF_TARGET_ESP32
-    //int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_in_pin=35, const int esp32_i2s_port_number=0);
-  int begin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false, int esp32_i2s_port_number=0);
+    int begin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false, int esp32_i2s_port_number=0);
   #elif CONFIG_IDF_TARGET_ESP32S2
-    //int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_in_pin=35);
-  int begin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false);
+    int begin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false);
   #endif // ifdef ESP
   virtual void end();
 
   /* Audio Out */
   #ifdef CONFIG_IDF_TARGET_ESP32
-    //int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=26, const int esp32_i2s_port_number=0);
-  int outBegin(long sampleRate=44100, int bitsPerSample=16, const int esp32_i2s_port_number=0);
+    int outBegin(long sampleRate=44100, int bitsPerSample=16, const int esp32_i2s_port_number=0);
   #elif CONFIG_IDF_TARGET_ESP32S2
-    //int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=26);
-  int outBegin(long sampleRate=44100, int bitsPerSample=16);
+    int outBegin(long sampleRate=44100, int bitsPerSample=16);
   #endif
 
   /* Original functions from ESP-ADF */
@@ -373,8 +368,8 @@ int i2c_init();
 int i2c_init(int i2c_scl_pin, int i2c_sda_pin);
 }; // class ES8388
 
-//#ifdef __cplusplus
+#ifdef __cplusplus
 }
-//#endif
+#endif
 
 #endif //__ES8388_H__
