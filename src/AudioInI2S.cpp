@@ -33,16 +33,16 @@ AudioInI2SClass::~AudioInI2SClass()
 
 #if defined ESP_PLATFORM
   #if defined ESP32
-    int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_in_pin/*=26*/ /*, const bool use_adc=true*/, const int esp32_i2s_port_number/*=0*/)
+    int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_in_pin/*=26*/ , const bool use_adc/*=true*/, const int esp32_i2s_port_number/*=0*/)
     {
       _esp32_i2s_port_number = esp32_i2s_port_number;
   #elif defined ESP32S2
-    int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_in_pin/*=26*//*, const bool use_adc=true*/)
+    int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_in_pin/*=26*/, const bool use_adc/*=true*/)
     {
   #endif //ESP 32 or 32S2
-    int i2s_mode = I2S_MODE_MASTER | I2S_MODE_RX;// | I2S_MODE_ADC_BUILT_IN;
+    int i2s_mode = I2S_MODE_MASTER | I2S_MODE_RX;
+    if(use_adc == true){i2s_mode = (i2s_mode_t)(i2s_mode | I2S_MODE_ADC_BUILT_IN);}
 
-    //if(use_adc == true){i2s_mode |= I2S_MODE_ADC_BUILT_IN;}
     static const i2s_config_t i2s_config = {
 	  .mode = (i2s_mode_t) i2s_mode ,
 	  .sample_rate =  sampleRate, // default 44100,

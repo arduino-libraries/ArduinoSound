@@ -60,38 +60,10 @@ FFTAnalyzer::~FFTAnalyzer()
 int FFTAnalyzer::available()
 {
   #ifdef ESP_PLATFORM
-    //Serial.println("FFT read available()");
-    //Serial.print("ESP read available= "); Serial.println((int)i2s_available((i2s_port_t)_esp32_i2s_port_number));
-    //esp_err_t i2s_read(i2s_port_t i2s_num, void *dest, size_t size, size_t *bytes_read, TickType_t ticks_to_wait);
-    //static size_t bytes_read;
     int bytes_read;
-    //Serial.print("FFT _input->read() up to x Bytes = "); Serial.println(_length);
-    //Serial.println("FFTAnalyzer::available() call _input->read()");
     bytes_read = _input->read(_data_buffer, _length);
-    // Always returns OK
-    /*esp_err_t ret =*/ // i2s_read((i2s_port_t) _esp32_i2s_port_number, _data_buffer, _length, &bytes_read, 1); // without error
-    //Serial.print("i2s_read ret = "); Serial.println(ret);
-    //i2s_read((i2s_port_t) _esp32_i2s_port_number, &_data_buffer, _length, &bytes_read, 0); // watchdog triggered
-    //Serial.print("FFT read available: bytes_read= "); Serial.println(bytes_read);
-
-    // only for debug - print entire _data_buffer
-
-    //Serial.print("FFT::available() read data; size = ");  Serial.println(bytes_read);
-    if(bytes_read > 0){
-/*
-      Serial.println("_data_buffer = ");
-      for(int i = 0; i < bytes_read; ++i){ // debug print; TODO remove this block
-        if(_data_buffer[i] != 0){
-          Serial.print("[");Serial.print(i);Serial.print("]=");Serial.print(_data_buffer[i]); Serial.print(" ");
-        }
-      }
-      Serial.println("");
-*/
-      //Serial.println("FFTAnalyzer::available > call update()");
-      //update(_data_buffer, bytes_read);
-    }
   #endif
-  //Serial.print("FFTAnalyzer::available return = "); Serial.println(_available);
+
   return _available;
 }
 
@@ -102,9 +74,7 @@ int FFTAnalyzer::readFloat(float spectrum[], int size){
 }
 int FFTAnalyzer::read(int spectrum[], int size)
 {
-  //Serial.print("FFT read() ");
   if (!_available) {
-    Serial.println("available == 0");
     return 0;
   }
 
@@ -114,8 +84,6 @@ int FFTAnalyzer::read(int spectrum[], int size)
 
   if (_bitsPerSample == 16) {
     #ifdef ESP_PLATFORM
-      //int32_t* dst = (int32_t*)spectrum;
-      //int16_t* src = (int16_t*)_spectrumBuffer;
       // convert from float to int even if that means often overflowing the int
       for (int i = 0; i < size; i++) {
         spectrum[i] = (long unsigned int)((float*)_spectrumBuffer)[i];
@@ -147,11 +115,8 @@ int FFTAnalyzer::read(int spectrum[], int size)
 int FFTAnalyzer::configure(AudioIn* input){
   _input = input;
 
-  Serial.println("FFTAnalyzer::configure()");
   int bitsPerSample = input->bitsPerSample();
   int channels = input->channels();
-  Serial.print("FFTAnalyzer::configure() bitsPerSample= ");Serial.println(bitsPerSample);
-  Serial.print("FFTAnalyzer::configure() channels= ");Serial.println(channels);
 
   if (bitsPerSample != 16 && bitsPerSample != 32) {
     return 0;
@@ -163,25 +128,21 @@ int FFTAnalyzer::configure(AudioIn* input){
 
   if (bitsPerSample == 16) {
     #ifdef ESP_PLATFORM
-      //this->_esp32_i2s_port_number = input->get_esp32_i2s_port_number();
       // FFT using 16-bit fixed point
       if (ESP_OK != dsps_fft2r_init_sc16(NULL, _length)) {
     #else
       if (ARM_MATH_SUCCESS != arm_rfft_init_q15(&_S15, _length, 0, 1)) {
     #endif
-        Serial.println("FFTAnalyzer::configure() FAILED!");
         return 0;
       }
   } else {
     #ifdef ESP_PLATFORM
       // FFT using 32-bit floating point
-      Serial.print("init fft for _length = "); Serial.println(_length);
       if (ESP_OK != dsps_fft2r_init_fc32(NULL, _length)) {
     #else
       //  (struct , length of the FFT, 1=forward transform, 0=enable bit reversal of output)
       if (ARM_MATH_SUCCESS != arm_rfft_init_q31(&_S31, _length, 0, 1)) {
     #endif
-        Serial.println("FFTAnalyzer::configure() FAILED!");
         return 0;
       }
   }

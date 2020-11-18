@@ -39,6 +39,7 @@ public:
   virtual int isPaused() = 0; // is the input paused now?
 
   void volume(float level); // Changes the volume of playback, allowed values are between 0 and 100 (percent).
+  int get_esp32_i2s_port_number();
 
 protected:
   int beginInput(AudioIn* input);

@@ -136,3 +136,7 @@ void AudioOut::adjustVolume(void* buffer, size_t size, int bitsPerSample)
     }
   }
 }
+int AudioOut::get_esp32_i2s_port_number()
+{
+  return _esp32_i2s_port_number;
+}

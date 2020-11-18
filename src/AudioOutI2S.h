@@ -36,9 +36,9 @@ public:
 
   #if defined ESP_PLATFORM
     #if defined ESP32
-  int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=26, const int esp32_i2s_port_number=0);
+  int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=26, const bool use_dac=true, const int esp32_i2s_port_number=0);
     #elif defined ESP32S2
-  int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=26);
+  int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=26, const bool use_dac=true);
     #endif
   #endif
 

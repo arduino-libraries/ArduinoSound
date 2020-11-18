@@ -66,9 +66,9 @@ ES8388::~ES8388()
 #ifdef ESP_PLATFORM
 {
   #ifdef CONFIG_IDF_TARGET_ESP32
-    AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin, esp32_i2s_port_number);
+    AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin, false, esp32_i2s_port_number);
   #elif CONFIG_IDF_TARGET_ESP32S2
-    AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin);
+    AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin, false);
   #endif
 
   audio_hal_iface_samples_t samples;  /*!< I2S interface samples per second */
@@ -121,9 +121,9 @@ ES8388::~ES8388()
 {
   int ret;
   #ifdef CONFIG_IDF_TARGET_ESP32
-    ret = AudioOutI2S.outBegin(sampleRate/*=44100*/, bitsPerSample/*=16*/, _bit_clock_pin/*=26*/, _word_select_pin/*=25*/, _codec_data_in_pin, esp32_i2s_port_number/*=0*/);
+    ret = AudioOutI2S.outBegin(sampleRate/*=44100*/, bitsPerSample/*=16*/, _bit_clock_pin/*=26*/, _word_select_pin/*=25*/, _codec_data_in_pin, false, esp32_i2s_port_number/*=0*/);
   #elif CONFIG_IDF_TARGET_ESP32S2
-    ret = AudioOutI2S.outBegin(sampleRate/*=44100*/, bitsPerSample/*=16*/, _bit_clock_pin/*=26*/, _word_select_pin/*=25*/, _codec_data_in_pin);
+    ret = AudioOutI2S.outBegin(sampleRate/*=44100*/, bitsPerSample/*=16*/, _bit_clock_pin/*=26*/, _word_select_pin/*=25*/, _codec_data_in_pin, false);
   #endif
 
     if(ret == 0){
