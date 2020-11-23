@@ -68,6 +68,9 @@ private:
   long _sampleRate;
   int _bitsPerSample;
   bool _callbackTriggered;
+  #if defined ESP_PLATFORM
+    bool _use_adc;
+  #endif
 };
 
 extern AudioInI2SClass AudioInI2S;

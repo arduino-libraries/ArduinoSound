@@ -62,6 +62,24 @@ int FFTAnalyzer::available()
   #ifdef ESP_PLATFORM
     int bytes_read;
     bytes_read = _input->read(_data_buffer, _length);
+    //bytes_read = _input->read(_data_buffer, 2); // debug - TODO delete
+    /*
+    Serial.print("FFT_available() bytes_read =");Serial.println(bytes_read);
+    for(int i = 0; i < _length/2; ++i){
+      Serial.print("[");Serial.print(i);Serial.print("]=");
+      Serial.print(((uint16_t*)_data_buffer)[i]);Serial.print("=0x");
+      Serial.println(((uint16_t*)_data_buffer)[i],HEX);
+    }
+    Serial.print("adc=");
+    int val = adc1_get_raw(ADC1_CHANNEL_6);
+    Serial.print(val);Serial.print("=0x");Serial.println(val,HEX);
+    uint16_t sampleA = (uint16_t)(_data_buffer[0])<<8 | _data_buffer[1];
+    uint16_t sampleB = (uint16_t)(_data_buffer[1])<<8 | _data_buffer[0];
+    if(bytes_read){
+      Serial.print("A=");Serial.print(sampleA);Serial.print("=0x");Serial.println(sampleA,HEX);
+      Serial.print("B=");Serial.print(sampleB);Serial.print("=0x");Serial.println(sampleB,HEX);
+    }
+    */
   #endif
 
   return _available;
@@ -203,6 +221,16 @@ int FFTAnalyzer::configure(AudioIn* input){
  */
 void FFTAnalyzer::update(const void* buffer, size_t size)
 {
+  Serial.println("FFT Update; 12b buffer=");
+  for(int i = 0; i < _length/2; ++i){
+    //Serial.print(((uint16_t*)buffer)[i] & 0x0FFF);Serial.print(" ");
+    Serial.print("[");Serial.print(i);Serial.print("]=");
+    Serial.print(((uint16_t*)buffer)[i]);Serial.print("=0x");
+    Serial.println(((uint16_t*)buffer)[i],HEX);
+    //Serial.print(((uint16_t*)buffer)[i] & 0x0FFF);Serial.print("=0x");
+    //Serial.println(((uint16_t*)buffer)[i] & 0x0FFF,HEX);
+  }
+  Serial.println("");
   int newSamplesSize = (size / _channels);
 
   if (newSamplesSize > _sampleBufferSize) {
@@ -253,9 +281,14 @@ void FFTAnalyzer::update(const void* buffer, size_t size)
       memcpy(newSamples, buffer, size);
   }
 
+  Serial.println("FFT Update; _sampleBuffer =");
+  for(int i = 0; i < _length; ++i){
+    Serial.print(((uint16_t*)_sampleBuffer)[i]);Serial.print(" ");
+  }
+  Serial.println("");
+
   #ifdef ESP_PLATFORM
     if (_bitsPerSample == 16) {
-      // Convert real to complex
       int16_t real_buffer[_length*2];
       real_int16_to_complex_int16((int16_t*)_sampleBuffer, _length, real_buffer);
       dsps_fft2r_sc16_ae32(real_buffer, _length); // FFT using 16-bit fixed point optimized for ESP32

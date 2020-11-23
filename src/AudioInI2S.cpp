@@ -40,15 +40,27 @@ AudioInI2SClass::~AudioInI2SClass()
     int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_in_pin/*=26*/, const bool use_adc/*=true*/)
     {
   #endif //ESP 32 or 32S2
-    int i2s_mode = I2S_MODE_MASTER | I2S_MODE_RX;
-    if(use_adc == true){i2s_mode = (i2s_mode_t)(i2s_mode | I2S_MODE_ADC_BUILT_IN);}
+
+      _use_adc = use_adc;
+    i2s_mode_t i2s_mode;
+    i2s_channel_fmt_t i2s_fmt;
+    i2s_comm_format_t i2s_comm;
+    if(use_adc == true){
+      i2s_mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN);
+      i2s_fmt = I2S_CHANNEL_FMT_ONLY_LEFT;
+      i2s_comm = I2S_COMM_FORMAT_I2S_LSB;
+    }else{
+      i2s_mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX);
+      i2s_fmt = I2S_CHANNEL_FMT_RIGHT_LEFT;
+      i2s_comm = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_STAND_PCM_LONG);
+    }
 
     static const i2s_config_t i2s_config = {
 	  .mode = (i2s_mode_t) i2s_mode ,
 	  .sample_rate =  sampleRate, // default 44100,
 	  .bits_per_sample = (i2s_bits_per_sample_t) bitsPerSample, // default 16,
-	  .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-	  .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_STAND_PCM_LONG),
+	  .channel_format = i2s_fmt,
+	  .communication_format = i2s_comm,
 	  .intr_alloc_flags = 0, // default interrupt priority
 	  .dma_buf_count = 8,
 	  .dma_buf_len = 64,
@@ -63,7 +75,21 @@ AudioInI2SClass::~AudioInI2SClass()
 	if (ESP_OK != i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, 0, NULL)){
 		return 0;
 	}
-	i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, &pin_config);
+	if(use_adc == true){
+	  i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
+	  i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, NULL);
+
+	  // TODO give user control over pin...
+	  i2s_set_adc_mode(ADC_UNIT_1, ADC1_CHANNEL_6); // ADC1_CHANNEL_6 == GPIO_NUM_34
+
+	  adc1_config_width(ADC_WIDTH_BIT_12);
+	  adc1_config_channel_atten(ADC1_CHANNEL_6, ADC_ATTEN_DB_11);
+
+	  adc_set_i2s_data_source(ADC_I2S_DATA_SRC_ADC); // ???
+	  i2s_adc_enable((i2s_port_t) _esp32_i2s_port_number);
+	}else{
+	  i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, &pin_config);
+	}
 #else
   int AudioInI2SClass::begin(long sampleRate, int bitsPerSample)
   {
@@ -101,6 +127,7 @@ void AudioInI2SClass::end()
   _bitsPerSample = -1;
   _callbackTriggered = true;
   #ifdef ESP_PLATFORM
+    i2s_adc_disable((i2s_port_t) _esp32_i2s_port_number);
     i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number);
   #else
     I2S.end();
@@ -140,7 +167,7 @@ int AudioInI2SClass::read(void* buffer, size_t size)
 {
   int read;
   #ifdef ESP_PLATFORM
-  	i2s_read((i2s_port_t) _esp32_i2s_port_number, buffer, (size_t) size, (size_t*) &read, 0);
+  	i2s_read((i2s_port_t) _esp32_i2s_port_number, buffer, (size_t) size, (size_t*) &read, 10);
   #else
     read = I2S.read(buffer, size);
   #endif
@@ -148,7 +175,6 @@ int AudioInI2SClass::read(void* buffer, size_t size)
   if (read) {
     samplesRead(buffer, read);
   }
-
   return read;
 }
 
