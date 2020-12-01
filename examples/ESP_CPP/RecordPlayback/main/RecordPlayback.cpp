@@ -37,23 +37,33 @@ SDWaveFile waveFile;
 // SD card interface
 SPIClass sdspi(HSPI);
 
-// Record audio and save to SD card in WAV format
-// parameters:
-//          filename  char string with file name
-//          duration  length of recording in seconds
-//          bitsPerSample  number of bits per sample. For example 8,16,32
-//          sampleRate     frequency of samples. For example 8000,16000,44100
-// returns: true on success
-//          false on failure
-// details: Function is expecting initialized SD card connection.
-//          Function attempts to create new file on SD card.
-//          Based on function parameters then initializes I2S and codec chip.
-//          After successfull init the function then records audio in given file.
+// Class controlling codec chip on LyraT board
+ES8388 codec_chip(GPIO_NUM_21, Wire);
+
+
+/**
+ * @brief Record audio and save to SD card in WAV format
+ *
+ * @param   filename        file name on SD card starting with '/'
+ *
+ * @param   duration        required length of recording in seconds
+ *
+ * @param   bitsPerSample   number of bits per sample. For example 8,16,32
+ *
+ * @param   sampleRate      frequency of samples. For example 8000,16000,44100
+ *
+ * @return:
+ *     - true    success
+ *     - false   failure
+ *
+ * Function is expecting initialized SD card connection.
+ * Function attempts to create new file on SD card.
+ * Based on function parameters then initializes I2S and codec chip.
+ * After successfull init the function then records audio in given file.
+ */
 bool record_wav_file(const char filename[], int duration, int bitsPerSample, long sampleRate, bool use_external_mic){
   bool ret = false;
 
-  Wire.begin(GPIO_NUM_18, GPIO_NUM_23); // Init I2C for codec setup
-  ES8388 codec_chip(GPIO_NUM_21, Wire); // Class controlling codec chip on LyraT board
   codec_chip.begin(sampleRate, bitsPerSample, use_external_mic); // Config codec for input
 
   waveFile = SDWaveFile(filename);
@@ -72,7 +82,6 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
   unsigned long timeElapsed = 0;
   while(!finished){
     bytesToWrite = codec_chip.read(data, buffer_size);
-    //Serial.print("I2S read bytes = ");Serial.println(bytesToWrite);
     if(timeElapsed >= duration*1000){
       finished = true;
       ret = true;
@@ -87,16 +96,21 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
   return ret;
 }
 
-// Play wav file from SD card
-// parameter:
-//          filename  char string with file name
-// returns: true on success
-//          false on failure
-// details: Function is expecting initialized SD card connection.
-//          Function then attempts to open given filename and read file header.
-//          Based on file header then initializes I2S and codec chip.
-//          After successfull init the function then plays given file.
-//          For demostration this function also prints its progress and file header
+/**
+ * @brief Play wav file from SD card
+ *
+ * @param   filename     file name on SD card starting with '/'
+ *
+ * @return:
+ *     - true    success
+ *     - false   failure
+ *
+ * Function is expecting initialized SD card connection.
+ * Function then attempts to open given filename and read file header.
+ * Based on file header then initializes I2S and codec chip.
+ * After successfull init the function then plays given file.
+ * For demostration this function also prints its progress and file header
+ */
 bool play_wav_file(const char filename[]){
   // Create a SDWaveFile
   waveFile = SDWaveFile(filename);
@@ -125,8 +139,6 @@ bool play_wav_file(const char filename[]){
   Serial.print(duration);
   Serial.println(" seconds");
 
-  Wire.begin(GPIO_NUM_18, GPIO_NUM_23); // Init I2C for codec setup
-  ES8388 codec_chip(GPIO_NUM_21, Wire); // Class controlling codec chip on LyraT board
   codec_chip.outBegin(waveFile.sampleRate(), waveFile.bitsPerSample()); // Config codec for playback
 
   // Adjust the playback volume
@@ -166,6 +178,9 @@ void setup() {
     Serial.println("initialization failed!");
     return;
   }
+
+  // Init I2C for codec setup
+  Wire.begin(GPIO_NUM_18, GPIO_NUM_23);
 
   Serial.println("initialization done.");
 }
