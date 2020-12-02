@@ -61,7 +61,8 @@ void loop() {
   //convert to interleaving fashion of Real and Imaginary values. Im=0
   int16_t complex_buffer[fftSize*2];
   for(int i = 0 ; i < fftSize; ++i){
-    complex_buffer[i*2] = buffer[i]; // Re
+    complex_buffer[i*2] = 2048*sin(2*M_PI*8/fftSize * i);
+    //complex_buffer[i*2] = buffer[i]; // Re
     complex_buffer[i*2+1] = 0; // Im=0
   }
 
@@ -72,6 +73,8 @@ void loop() {
   Serial.println("");
 
   dsps_fft2r_sc16_ae32(complex_buffer, fftSize);
+  dsps_bit_rev_sc16_ansi(complex_buffer, fftSize); // this was missing !
+
   Serial.println("complex_buffer after FFT:");
   for (int i = 0; i < fftSize*2; i++) {
     Serial.print(complex_buffer[i]); Serial.print(" ");

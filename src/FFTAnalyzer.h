@@ -22,6 +22,7 @@
 #ifdef ESP_PLATFORM
   #include "esp_dsp.h"
   #include "driver/i2s.h"
+  #include <cmath>
   typedef uint16_t q15_t;
   typedef uint32_t q31_t;
 #else

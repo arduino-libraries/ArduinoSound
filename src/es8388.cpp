@@ -59,16 +59,16 @@ ES8388::~ES8388()
 
 /* Audio In */
   #ifdef CONFIG_IDF_TARGET_ESP32
-    int ES8388::begin(long sampleRate, int bitsPerSample, bool use_external_mic/*=false*/, int esp32_i2s_port_number)
+    int ES8388::begin(long sampleRate, int bitsPerSample, bool use_external_mic/*=false*/, int esp32_i2s_port_number/*=0*/)
   #elif CONFIG_IDF_TARGET_ESP32S2
     int ES8388::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, bool use_external_mic/*=false*/)
   #endif
 #ifdef ESP_PLATFORM
 {
   #ifdef CONFIG_IDF_TARGET_ESP32
-    AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin, false, esp32_i2s_port_number);
+    AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin, esp32_i2s_port_number);
   #elif CONFIG_IDF_TARGET_ESP32S2
-    AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin, false);
+    AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin);
   #endif
 
   audio_hal_iface_samples_t samples;  /*!< I2S interface samples per second */
@@ -121,9 +121,9 @@ ES8388::~ES8388()
 {
   int ret;
   #ifdef CONFIG_IDF_TARGET_ESP32
-    ret = AudioOutI2S.outBegin(sampleRate/*=44100*/, bitsPerSample/*=16*/, _bit_clock_pin/*=26*/, _word_select_pin/*=25*/, _codec_data_in_pin, false, esp32_i2s_port_number/*=0*/);
+    ret = AudioOutI2S.outBegin(sampleRate/*=44100*/, bitsPerSample/*=16*/, _bit_clock_pin/*=26*/, _word_select_pin/*=25*/, _codec_data_in_pin, esp32_i2s_port_number/*=0*/);
   #elif CONFIG_IDF_TARGET_ESP32S2
-    ret = AudioOutI2S.outBegin(sampleRate/*=44100*/, bitsPerSample/*=16*/, _bit_clock_pin/*=26*/, _word_select_pin/*=25*/, _codec_data_in_pin, false);
+    ret = AudioOutI2S.outBegin(sampleRate/*=44100*/, bitsPerSample/*=16*/, _bit_clock_pin/*=26*/, _word_select_pin/*=25*/, _codec_data_in_pin);
   #endif
 
     if(ret == 0){
@@ -151,7 +151,8 @@ ES8388::~ES8388()
       .samples = samples,
       .bits = bits};
 
-    _cfg.dac_output = AUDIO_HAL_DAC_OUTPUT_ALL; // TODO give user option to modify
+    //_cfg.dac_output = AUDIO_HAL_DAC_OUTPUT_ALL;
+    _cfg.dac_output = AUDIO_HAL_DAC_OUTPUT_LINE1; // Only line 1 is connected to output
     _cfg.codec_mode = AUDIO_HAL_CODEC_MODE_ENCODE; /*!< select adc */
     _cfg.i2s_iface = i2s_iface;  /*!< set I2S interface configuration */
     es8388_init(&_cfg);

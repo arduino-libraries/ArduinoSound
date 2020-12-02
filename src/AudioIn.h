@@ -51,8 +51,8 @@ protected:
 
 protected:
   friend class AudioAnalyzer;
-
   int setAnalyzer(AudioAnalyzer* analyzer);
+  int _channels;
 
 private:
   AudioAnalyzer* _analyzer;
