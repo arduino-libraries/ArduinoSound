@@ -54,10 +54,12 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
   #elif defined ESP_PLATFORM && defined ESP32S2
     int AudioOutI2SClass::outBegin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_out_pin/*=35*/){
   #endif // ESP chip model
+    Serial.println("I2S output in normal mode");
     if(_initialized){
-      return 0; // ERR
+      //Serial.println("WARNING - I2S output already initialized");
+      i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
+      _initialized = false;
     }
-    i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
     bool use_dac = false;
     i2s_bits_per_sample_t bits;
       if(bitsPerSample <=8)                         bits = I2S_BITS_PER_SAMPLE_8BIT;
@@ -84,11 +86,13 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
       };
       int ret = i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, 0, NULL);   //install and start i2s driver
       if(ret != ESP_OK){
+        Serial.println("ERROR - could not install I2S driver");
         return 0;
       }
 
       ret = i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, &pin_config);
       if(ret != ESP_OK){
+        Serial.println("ERROR - could not set I2S pins");
         return 0;
       }
 
@@ -104,7 +108,7 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
   #elif defined ESP_PLATFORM && defined ESP32S2
     int AudioOutI2SClass::beginDAC(long sampleRate/*=44100*/){
   #endif // ESP chip model
-    i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
+    //i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
     bool use_dac = true;
 
     static const i2s_config_t i2s_config = {
@@ -191,7 +195,7 @@ int AudioOutI2SClass::stop()
   #endif
 
   if (!_input) {
-    return 0;    
+    return 0;
   }
 
   endInput(_input);
@@ -243,7 +247,7 @@ int AudioOutI2SClass::startPlayback(AudioIn& input, bool loop)
   uint8_t silence[length];
   memset(silence, 0x00, length);
 
-  size_t bytes_written;
+  //size_t bytes_written;
 #else
   I2S.onTransmit(AudioOutI2SClass::onI2STransmit);
 
@@ -330,6 +334,17 @@ void AudioOutI2SClass::onI2STransmit()
 void AudioOutI2SClass::transmit()
 {
   onTransmit();
+}
+
+int AudioOutI2SClass::write(const void *buffer, size_t size)
+{
+  size_t bytes_written;
+  int ret = i2s_write((i2s_port_t)get_esp32_i2s_port_number(), buffer, size, &bytes_written, 100);
+  if(ret != ESP_OK){
+    return 0; // ERR
+  }else{
+    return 1; // OK
+  }
 }
 
 AudioOutI2SClass AudioOutI2S;

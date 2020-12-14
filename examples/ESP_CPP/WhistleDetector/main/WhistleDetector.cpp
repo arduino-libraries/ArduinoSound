@@ -25,18 +25,18 @@ ES8388 *codec_chip;
 
 // the LED pin to use as output
 #ifdef ESP_PLATFORM
-  const int ledPin = GPIO_NUM_22;
+const int ledPin = GPIO_NUM_22;
 #else
   const int ledPin = LED_BUILTIN;
 #endif
 
 // sample rate for the input
-const int sampleRate = 8000;
+const int sampleRate = 44100;
 
-const int bitsPerSample = 32;
+const int bitsPerSample = 16;
 
 // size of the FFT to compute
-const int fftSize = 128;
+const int fftSize = 1024;
 
 // size of the spectrum output, half of FFT size
 const int spectrumSize = fftSize / 2;
@@ -54,6 +54,7 @@ float spectrum[spectrumSize];
 FFTAnalyzer fftAnalyzer(fftSize);
 
 void setup() {
+  disableCore1WDT();
   // setup the serial
 #ifdef ESP_PLATFORM
   Serial.begin(115200);
@@ -61,13 +62,14 @@ void setup() {
   Serial.begin(9600);
 #endif
   Wire.begin(GPIO_NUM_18, GPIO_NUM_23);
+  //Wire.begin(GPIO_NUM_18, GPIO_NUM_13);
   codec_chip = new ES8388(GPIO_NUM_21, Wire);
 
   // configure the pin for output mode
   pinMode(ledPin, OUTPUT);
 
-  bool use_external_mic = true;
-  if (!codec_chip->begin(sampleRate, bitsPerSample, use_external_mic)){
+  bool use_external_mic = false;
+  if (!codec_chip->beginIn(sampleRate, bitsPerSample, use_external_mic)){
     Serial.println("Failed to initialize I2S input!");
     while (1); // do nothing
   }
@@ -97,6 +99,13 @@ void loop() {
     }else{
       ledValue = (int)float_map(spectrum[whistleBin], 30000000000.0, 180000000000.0, 0.0, 255.0);
     }
+    Serial.print("spectrum["); Serial.print(whistleBin); Serial.print("]="); Serial.println(spectrum[whistleBin]);
+
+    Serial.println("spectrum =");
+    for(int i = 0; i < spectrumSize; ++i){
+      Serial.print(spectrum[i]); Serial.print(" ");
+    }
+    Serial.println("");
 
     // cap the values
     if (ledValue < 0) {

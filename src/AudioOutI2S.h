@@ -61,6 +61,7 @@ public:
 
   // Manual data transmit
   virtual void transmit();
+  int write(const void *buffer, size_t size);
 
 private:
   int startPlayback(AudioIn& input, bool loop);

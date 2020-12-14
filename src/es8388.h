@@ -123,9 +123,9 @@ public:
 
   /* Audio In */
   #ifdef CONFIG_IDF_TARGET_ESP32
-    int begin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false, int esp32_i2s_port_number=0);
+    int inBegin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false, int esp32_i2s_port_number=0);
   #elif CONFIG_IDF_TARGET_ESP32S2
-    int begin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false);
+    int inBegin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false);
   #endif // ifdef ESP
   virtual void end();
 
@@ -135,6 +135,12 @@ public:
   #elif CONFIG_IDF_TARGET_ESP32S2
     int outBegin(long sampleRate=44100, int bitsPerSample=16);
   #endif
+
+  /* Audio In + Out */
+  #ifdef CONFIG_IDF_TARGET_ESP32
+    int begin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false);
+  #endif
+
 
   /* Original functions from ESP-ADF */
 
@@ -360,6 +366,7 @@ void volume(float level);
 int es8388_set_adc_dac_volume(int mode, int volume, int dot);
 
 virtual int read(void* buffer, size_t size);
+int write(void* buffer, size_t size);
 
 private:
 esp_err_t es_write_reg(uint8_t slave_addr, uint8_t reg_add, uint8_t data);

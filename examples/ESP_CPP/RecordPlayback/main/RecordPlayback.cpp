@@ -38,8 +38,7 @@ SDWaveFile waveFile;
 SPIClass sdspi(HSPI);
 
 // Class controlling codec chip on LyraT board
-ES8388 codec_chip(GPIO_NUM_21, Wire);
-
+ES8388 *codec_chip;
 
 /**
  * @brief Record audio and save to SD card in WAV format
@@ -64,7 +63,10 @@ ES8388 codec_chip(GPIO_NUM_21, Wire);
 bool record_wav_file(const char filename[], int duration, int bitsPerSample, long sampleRate, bool use_external_mic){
   bool ret = false;
 
-  codec_chip.begin(sampleRate, bitsPerSample, use_external_mic); // Config codec for input
+  if(!codec_chip->inBegin(sampleRate, bitsPerSample, use_external_mic)){ // Config codec for input
+    Serial.println("ERROR: Could not initialize codec chip for input");
+    return 0; // ERR
+  }
 
   waveFile = SDWaveFile(filename);
   waveFile.purgeTmp();
@@ -80,8 +82,9 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
   bool finished = false;
   unsigned long startMillis = millis();
   unsigned long timeElapsed = 0;
+  Serial.print("Recording started (");Serial.print(duration);Serial.println("s)");
   while(!finished){
-    bytesToWrite = codec_chip.read(data, buffer_size);
+    bytesToWrite = codec_chip->read(data, buffer_size);
     if(timeElapsed >= duration*1000){
       finished = true;
       ret = true;
@@ -93,6 +96,8 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
     }
     timeElapsed = millis() - startMillis;
   } // write loop
+  Serial.println("Recording finished");
+  codec_chip->end();
   return ret;
 }
 
@@ -139,33 +144,38 @@ bool play_wav_file(const char filename[]){
   Serial.print(duration);
   Serial.println(" seconds");
 
-  codec_chip.outBegin(waveFile.sampleRate(), waveFile.bitsPerSample()); // Config codec for playback
+  if(!codec_chip->outBegin(waveFile.sampleRate(), waveFile.bitsPerSample())){// Config codec for playback
+    Serial.println("ERROR - could not initialize codec chip for output");
+    return false;
+  }
 
   // Adjust the playback volume
   Serial.println("set volume...");
-  codec_chip.volume(100.0); // Set maximum volume (100%)
+  codec_chip->volume(50.0); // Set maximum volume (100%)
 
   // Check if the I2S output can play the wave file
-  if (!codec_chip.canPlay(waveFile)) {
+  if (!codec_chip->canPlay(waveFile)) {
     Serial.println("Unable to play wave file using I2S!");
     return false;
   }
 
   // start playback
   Serial.println("Starting playback");
-  codec_chip.play(waveFile);
+  codec_chip->play(waveFile);
 
   while(true){
-    if(!codec_chip.isPlaying()){
+    if(!codec_chip->isPlaying()){
       Serial.println("Playback stopped");
       return true;
     }else{
-      codec_chip.transmit(); // send data to audio output
+      codec_chip->transmit(); // send data to audio output
     } // if isPlaying
   } // playback loop
+  codec_chip->end();
 } // play_wav_file()
 
 void setup() {
+  disableCore1WDT();
   // Open serial communications and wait for port to open:
   Serial.begin(115200);
   while (!Serial) {
@@ -178,16 +188,19 @@ void setup() {
     Serial.println("initialization failed!");
     return;
   }
+  Serial.println(" SD initialized");
 
   // Init I2C for codec setup
+  Serial.println("Initialize wire for codec chip");
   Wire.begin(GPIO_NUM_18, GPIO_NUM_23);
+  codec_chip = new ES8388(GPIO_NUM_21, Wire);
 
-  Serial.println("initialization done.");
+  Serial.println("Initialization done.");
 }
 
 void loop() {
   bool use_external_mic = true;
-  int recordDuration = 5; // number of seconds to keep recording
+  int recordDuration = 3; // number of seconds to keep recording
   if(!record_wav_file(filename, recordDuration, 16, 8000, use_external_mic)){
     Serial.println("Record failed!");
   }else{ // Recording succeeded - proceed to playback
@@ -195,5 +208,5 @@ void loop() {
       Serial.println("Playback failed!");
     }
   }
-  delay(10000);
+  delay(3000);
 }

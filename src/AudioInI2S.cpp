@@ -41,8 +41,10 @@ AudioInI2SClass::~AudioInI2SClass()
     int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_in_pin/*=26*/)
     {
   #endif //ESP 32 or 32S2
+    Serial.println("I2S input in normal mode");
     if(_initialized){
-      return 0; // ERR
+      i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
+      _initialized = false;
     }
     _use_adc = false;
 
@@ -51,11 +53,13 @@ AudioInI2SClass::~AudioInI2SClass()
 	  .sample_rate =  sampleRate, // default 44100,
 	  .bits_per_sample = (i2s_bits_per_sample_t) bitsPerSample, // default 16,
 	  .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-	  .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_I2S | I2S_COMM_FORMAT_STAND_PCM_LONG),
+	  .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_I2S | I2S_COMM_FORMAT_STAND_PCM_LONG),
 	  .intr_alloc_flags = 0, // default interrupt priority
 	  .dma_buf_count = 8, // original
 	  .dma_buf_len = 64,
-	  .use_apll = false
+	  .use_apll = false,
+    .tx_desc_auto_clear = false,
+    .fixed_mclk = 0
 	};
 	static const i2s_pin_config_t pin_config = {
 	    .bck_io_num = bit_clock_pin,
@@ -67,7 +71,9 @@ AudioInI2SClass::~AudioInI2SClass()
 		return 0;
 	}
 
-	i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, &pin_config);
+	if (ESP_OK != i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, &pin_config)){
+    return 0;
+  }
 
 #else
   int AudioInI2SClass::begin(long sampleRate, int bitsPerSample)
@@ -103,7 +109,9 @@ AudioInI2SClass::~AudioInI2SClass()
     {
   #endif //ESP 32 or 32S2
     if(_initialized){
-      return 0; // ERR
+      i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
+      _initialized = false;
+      //return 0; // ERR
     }
     Serial.println("I2S input in ADC mode");
     _use_adc = true;
@@ -115,7 +123,8 @@ AudioInI2SClass::~AudioInI2SClass()
     .sample_rate =  sampleRate, // default 44100,
     .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
     .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-    .communication_format = I2S_COMM_FORMAT_I2S_LSB,
+    //.communication_format = I2S_COMM_FORMAT_I2S_LSB, // deprecated (0x02)
+    .communication_format = I2S_COMM_FORMAT_STAND_MSB, // TODO verify if that really works (0x03)
     .intr_alloc_flags = 0, // default interrupt priority
     .dma_buf_count = dma_buf_count, // original
     .dma_buf_len = 1024,
@@ -168,7 +177,9 @@ void AudioInI2SClass::end()
   _bitsPerSample = -1;
   _callbackTriggered = true;
   #ifdef ESP_PLATFORM
-    i2s_adc_disable((i2s_port_t) _esp32_i2s_port_number);
+    if(_use_adc){
+      i2s_adc_disable((i2s_port_t) _esp32_i2s_port_number);
+    }
     i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number);
   #else
     I2S.end();

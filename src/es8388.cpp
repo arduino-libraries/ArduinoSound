@@ -58,19 +58,21 @@ ES8388::~ES8388()
  * move common settings to constructor */
 
 /* Audio In */
-  #ifdef CONFIG_IDF_TARGET_ESP32
-    int ES8388::begin(long sampleRate, int bitsPerSample, bool use_external_mic/*=false*/, int esp32_i2s_port_number/*=0*/)
-  #elif CONFIG_IDF_TARGET_ESP32S2
-    int ES8388::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, bool use_external_mic/*=false*/)
-  #endif
 #ifdef ESP_PLATFORM
+  #ifdef CONFIG_IDF_TARGET_ESP32
+    int ES8388::inBegin(long sampleRate, int bitsPerSample, bool use_external_mic/*=false*/, int esp32_i2s_port_number/*=0*/)
+  #elif CONFIG_IDF_TARGET_ESP32S2
+    int ES8388::inBegin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, bool use_external_mic/*=false*/)
+  #endif
 {
   #ifdef CONFIG_IDF_TARGET_ESP32
-    AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin, esp32_i2s_port_number);
+    if(!AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin, esp32_i2s_port_number)){
   #elif CONFIG_IDF_TARGET_ESP32S2
-    AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin);
+    if(!AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin)){
   #endif
-
+      return 0; // ERR - begin I2S
+    }
+  Serial.println("ES8388 in begin");
   audio_hal_iface_samples_t samples;  /*!< I2S interface samples per second */
     if(sampleRate <= 8000) samples = AUDIO_HAL_08K_SAMPLES;   /*!< set to  8k samples per second */
     if(sampleRate > 8000 && sampleRate <= 11025) samples = AUDIO_HAL_11K_SAMPLES;   /*!< set to 11.025k samples per second */
@@ -101,14 +103,18 @@ ES8388::~ES8388()
   _cfg.codec_mode = AUDIO_HAL_CODEC_MODE_ENCODE;
   _cfg.i2s_iface = i2s_iface;  /*!< set I2S interface configuration */
 
-  es8388_init(&_cfg);
-  es8388_config_i2s(_cfg.codec_mode, &i2s_iface);
-
-  es8388_start(ES_MODULE_ADC); // Start ES8388 codec chip in A/D converter mode
-
+  if (ESP_OK != es8388_init(&_cfg)){
+    return 0; // ERR
+  }
+  if (ESP_OK != es8388_config_i2s(_cfg.codec_mode, &i2s_iface)){
+    return 0; // ERR
+  }
+  if (ESP_OK != es8388_start(ES_MODULE_ADC)){ // Start ES8388 codec chip in A/D converter mode
+    return 0; // ERR
+  }
+  Serial.println("ES8388 in begin All set");
   return 1; // OK
 }
-  #endif // ifdef ESP
 
 /* Audio Out */
 
@@ -117,17 +123,17 @@ ES8388::~ES8388()
   #elif CONFIG_IDF_TARGET_ESP32S2
      int ES8388::outBegin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/)
   #endif
-#ifdef ESP_PLATFORM
 {
   int ret;
   #ifdef CONFIG_IDF_TARGET_ESP32
-    ret = AudioOutI2S.outBegin(sampleRate/*=44100*/, bitsPerSample/*=16*/, _bit_clock_pin/*=26*/, _word_select_pin/*=25*/, _codec_data_in_pin, esp32_i2s_port_number/*=0*/);
+    ret = AudioOutI2SClass::outBegin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_in_pin, esp32_i2s_port_number);
   #elif CONFIG_IDF_TARGET_ESP32S2
-    ret = AudioOutI2S.outBegin(sampleRate/*=44100*/, bitsPerSample/*=16*/, _bit_clock_pin/*=26*/, _word_select_pin/*=25*/, _codec_data_in_pin);
+    ret = AudioOutI2SClass::outBegin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_in_pin);
   #endif
 
     if(ret == 0){
-      return 0;
+      Serial.println("ERROR - could not initialize I2S for output");
+      return 0; // ERR
     }
 
     audio_hal_iface_samples_t samples;  /*!< I2S interface samples per second */
@@ -151,21 +157,93 @@ ES8388::~ES8388()
       .samples = samples,
       .bits = bits};
 
-    //_cfg.dac_output = AUDIO_HAL_DAC_OUTPUT_ALL;
     _cfg.dac_output = AUDIO_HAL_DAC_OUTPUT_LINE1; // Only line 1 is connected to output
-    _cfg.codec_mode = AUDIO_HAL_CODEC_MODE_ENCODE; /*!< select adc */
+    _cfg.codec_mode = AUDIO_HAL_CODEC_MODE_DECODE; /*!< select dac */
+    //_cfg.codec_mode = AUDIO_HAL_CODEC_MODE_ENCODE; /*!< select adc */
+    //_cfg.codec_mode = AUDIO_HAL_CODEC_MODE_BOTH; /*!< select both adc and dac */
     _cfg.i2s_iface = i2s_iface;  /*!< set I2S interface configuration */
-    es8388_init(&_cfg);
-    es8388_config_i2s(_cfg.codec_mode, &i2s_iface);
-
-    es8388_config_dac_output((es_dac_output_t)(DAC_OUTPUT_LOUT1 | DAC_OUTPUT_ROUT1));
-    es8388_start(ES_MODULE_DAC); // Start ES8388 codec chip in D/A converter mode
+    if (ESP_OK != es8388_init(&_cfg)){
+      Serial.println("ERROR - could not initialize ES8388 with given config settings");
+      return 0; // ERR
+    }
+    if (ESP_OK != es8388_config_i2s(_cfg.codec_mode, &i2s_iface)){
+      Serial.println("ERROR - could not configure I2S in ES8388");
+      return 0; // ERR
+    }
+    if (ESP_OK != es8388_config_dac_output((es_dac_output_t)(DAC_OUTPUT_LOUT1 | DAC_OUTPUT_ROUT1))){
+      Serial.println("ERROR - could not config DAC in ES8388");
+      return 0; // ERR
+    }
+    if (ESP_OK != es8388_start(ES_MODULE_DAC)){ // Start ES8388 codec chip in D/A converter mode
+      Serial.println("ERROR - could not start ES8388");
+      return 0; // ERR
+    }
     return 1; // OK
 }
-#endif
+
+    /* Audio In + Out */
+
+  #ifdef CONFIG_IDF_TARGET_ESP32
+    int ES8388::begin(long sampleRate, int bitsPerSample, bool use_external_mic/*=false*/){
+    if(!AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin, 0)){
+      return 0; // ERR - begin I2S input
+    }
+    if(!AudioOutI2SClass::outBegin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_in_pin, 1)){
+      return 0; // ERR - begin I2S output
+    }
+
+  audio_hal_iface_samples_t samples;  /*!< I2S interface samples per second */
+  if(sampleRate <= 8000) samples = AUDIO_HAL_08K_SAMPLES;   /*!< set to  8k samples per second */
+  if(sampleRate > 8000 && sampleRate <= 11025) samples = AUDIO_HAL_11K_SAMPLES;   /*!< set to 11.025k samples per second */
+  if(sampleRate > 11025 && sampleRate <= 16000) samples = AUDIO_HAL_16K_SAMPLES;   /*!< set to 16k samples in per second */
+  if(sampleRate > 16000 && sampleRate <= 22050) samples = AUDIO_HAL_22K_SAMPLES;   /*!< set to 22.050k samples per second */
+  if(sampleRate > 22050 && sampleRate <= 24000) samples = AUDIO_HAL_24K_SAMPLES;   /*!< set to 24k samples in per second */
+  if(sampleRate > 24000 && sampleRate <= 32000) samples = AUDIO_HAL_32K_SAMPLES;   /*!< set to 32k samples in per second */
+  if(sampleRate > 32000 && sampleRate <= 44100) samples = AUDIO_HAL_44K_SAMPLES;   /*!< set to 44.1k samples per second */
+  if(sampleRate > 44100) samples = AUDIO_HAL_48K_SAMPLES;   /*!< set to 48k samples per second */
+
+  audio_hal_iface_bits_t bits;        /*!< i2s interface number of bits per sample */
+  if(bitsPerSample <=16) bits = AUDIO_HAL_BIT_LENGTH_16BITS;
+  if(bitsPerSample > 16 && bitsPerSample <= 24) bits = AUDIO_HAL_BIT_LENGTH_24BITS;
+  if(bitsPerSample > 24) bits = AUDIO_HAL_BIT_LENGTH_32BITS;
+
+  audio_hal_codec_i2s_iface_t i2s_iface = {
+    .mode = AUDIO_HAL_MODE_SLAVE, /*!< set slave mode */
+    .fmt = AUDIO_HAL_I2S_DSP, /*!< set dsp/pcm format */
+    .samples = samples,
+    .bits = bits
+  };
+
+  if(use_external_mic){
+    _cfg.adc_input = AUDIO_HAL_ADC_INPUT_LINE2; // AUX_IN for external source
+  }else{
+    _cfg.adc_input = AUDIO_HAL_ADC_INPUT_LINE1; // Lyrat onboard microphones
+  }
+  _cfg.dac_output = AUDIO_HAL_DAC_OUTPUT_LINE1; // Only line 1 is connected to output
+  _cfg.codec_mode = AUDIO_HAL_CODEC_MODE_BOTH; /*!< select both adc and dac */
+  //_cfg.codec_mode = AUDIO_HAL_CODEC_MODE_ENCODE; /*!< select adc */
+  _cfg.i2s_iface = i2s_iface;  /*!< set I2S interface configuration */
+  if (ESP_OK != es8388_init(&_cfg)){
+    return 0; // ERR
+  }
+  if (ESP_OK != es8388_config_i2s(_cfg.codec_mode, &i2s_iface)){
+    return 0; // ERR
+  }
+  if (ESP_OK != es8388_config_dac_output((es_dac_output_t)(DAC_OUTPUT_LOUT1 | DAC_OUTPUT_ROUT1))){
+    return 0; // ERR
+  }
+  if (ESP_OK != es8388_start(ES_MODULE_DAC)){ // Start ES8388 codec chip in D/A converter mode
+    return 0; // ERR
+  }
+  return 1; // OK
+}
+#endif // CONFIG_IDF_TARGET_ESP32 - wrapping in+out initializer
+#endif // ESP_PLATFORM - wrapping all 3 initializer
 
 void ES8388::end()
 {
+  AudioInI2SClass::end();
+  AudioOutI2SClass::stop();
   es8388_stop(ES_MODULE_ADC); // Stop ES8388 codec chip
   es8388_pa_power(false); // Disable power to codec chip
 }
@@ -175,8 +253,8 @@ void ES8388::end()
 esp_err_t ES8388::es_write_reg(uint8_t slave_addr, uint8_t reg_addr, uint8_t data)
 {
   if(!_i2c_initialized){
-      return ESP_ERR_INVALID_STATE;
-      }
+    return ESP_ERR_INVALID_STATE;
+  }
   _wire.beginTransmission(slave_addr>>1);
   _wire.write(reg_addr);
   _wire.write(data);
@@ -184,10 +262,11 @@ esp_err_t ES8388::es_write_reg(uint8_t slave_addr, uint8_t reg_addr, uint8_t dat
   return ESP_OK;
 }
 
+
 esp_err_t ES8388::es_read_reg(uint8_t reg_addr, uint8_t *p_data)
 {
     if(!_i2c_initialized){
-    return ESP_ERR_INVALID_STATE;
+      return ESP_ERR_INVALID_STATE;
     }
 
     _wire.beginTransmission(ES8388_ADDR>>1);
@@ -714,4 +793,8 @@ void ES8388::es8388_pa_power(bool enable)
 
 int ES8388::read(void* buffer, size_t size){
   return AudioInI2SClass::read(buffer, size);
+}
+
+int ES8388::write(void* buffer, size_t size){
+  return AudioOutI2SClass::write(buffer, size);
 }
