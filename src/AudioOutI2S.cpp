@@ -54,9 +54,7 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
   #elif defined ESP_PLATFORM && defined ESP32S2
     int AudioOutI2SClass::outBegin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_out_pin/*=35*/){
   #endif // ESP chip model
-    Serial.println("I2S output in normal mode");
     if(_initialized){
-      //Serial.println("WARNING - I2S output already initialized");
       i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
       _initialized = false;
     }
@@ -86,13 +84,11 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
       };
       int ret = i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, 0, NULL);   //install and start i2s driver
       if(ret != ESP_OK){
-        Serial.println("ERROR - could not install I2S driver");
         return 0;
       }
 
       ret = i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, &pin_config);
       if(ret != ESP_OK){
-        Serial.println("ERROR - could not set I2S pins");
         return 0;
       }
 
@@ -108,7 +104,10 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
   #elif defined ESP_PLATFORM && defined ESP32S2
     int AudioOutI2SClass::beginDAC(long sampleRate/*=44100*/){
   #endif // ESP chip model
-    //i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
+    if(_initialized){
+      i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
+      _initialized = false;
+    }
     bool use_dac = true;
 
     static const i2s_config_t i2s_config = {
