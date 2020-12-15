@@ -31,15 +31,15 @@
  created 13 November 2020
  by Tomas Pilny
  */
-#define USE_BUTTON
-
 #include <ArduinoSound.h>
+
+//#define USE_BUTTON
+const int button_pin = GPIO_NUM_12;
 
 // symbol names of file's start and end
 extern const uint8_t sound_file_wav_start[] asm("_binary_sound_file_wav_start");
 extern const uint8_t sound_file_wav_end[]   asm("_binary_sound_file_wav_end");
 
-const int button_pin = GPIO_NUM_12;
 
 struct SubChunkHeader {
   uint32_t id;
@@ -102,12 +102,11 @@ bool play_embedded_wav_file(const uint8_t *file_start, const uint8_t *file_end){
   Serial.print(sampleRate);
   Serial.println(" Hz");
   long bitsPerSample = header.subChunk1.bitsPerSample;
-  bool transform_data = false;
   if(bitsPerSample == 8){ // I2S needs at least 16 bits we will reduce sample rate
     bitsPerSample = 16;
     sampleRate = sampleRate /2;
   }
-  AudioOutI2S.outBegin(sampleRate, bitsPerSample, 5, 25, 35, true);
+  AudioOutI2S.beginDAC(sampleRate);
 
   // Adjust the playback volume
   Serial.println("set volume...");
@@ -141,6 +140,7 @@ bool play_embedded_wav_file(const uint8_t *file_start, const uint8_t *file_end){
 } // play_wav_file()
 
 void setup() {
+  disableCore1WDT();
   // Open serial communications and wait for port to open:
   Serial.begin(115200);
   while (!Serial) {
@@ -155,6 +155,7 @@ void setup() {
 
 void loop() {
   #ifdef USE_BUTTON
+    Serial.println("Press button to play");
     static bool button_current_state, button_previous_state;
     button_previous_state = true;
     while(true){
