@@ -27,7 +27,6 @@
 #include <ArduinoSound.h>
 
 
-
 // filename of wave file to record into and playback
 const char filename[] = "/test.wav"; // note: the filename must start with '/' (slash)
 
@@ -73,6 +72,7 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
   ret = waveFile.initWrite(bitsPerSample, sampleRate);
   if(!ret){
     Serial.println("ERROR: Could not initialize tmp file");
+    codec_chip->end();
     return ret;
   }
   int bytesToWrite = 0;
@@ -92,6 +92,7 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
     ret = waveFile.writeData(data, bytesToWrite, finished);
     if(!ret){
       Serial.println("ERROR: While writing");
+      codec_chip->end();
       return ret;
     }
     timeElapsed = millis() - startMillis;
@@ -151,7 +152,7 @@ bool play_wav_file(const char filename[]){
 
   // Adjust the playback volume
   Serial.println("set volume...");
-  codec_chip->volume(50.0); // Set maximum volume (100%)
+  codec_chip->volume(100.0); // Set maximum volume (100%)
 
   // Check if the I2S output can play the wave file
   if (!codec_chip->canPlay(waveFile)) {
@@ -199,8 +200,8 @@ void setup() {
 }
 
 void loop() {
-  bool use_external_mic = true;
-  int recordDuration = 3; // number of seconds to keep recording
+  bool use_external_mic = false;
+  int recordDuration = 5; // number of seconds to keep recording
   if(!record_wav_file(filename, recordDuration, 16, 8000, use_external_mic)){
     Serial.println("Record failed!");
   }else{ // Recording succeeded - proceed to playback
@@ -208,5 +209,5 @@ void loop() {
       Serial.println("Playback failed!");
     }
   }
-  delay(3000);
+  delay(1000);
 }

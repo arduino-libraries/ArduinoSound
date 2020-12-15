@@ -72,7 +72,6 @@ ES8388::~ES8388()
   #endif
       return 0; // ERR - begin I2S
     }
-  Serial.println("ES8388 in begin");
   audio_hal_iface_samples_t samples;  /*!< I2S interface samples per second */
     if(sampleRate <= 8000) samples = AUDIO_HAL_08K_SAMPLES;   /*!< set to  8k samples per second */
     if(sampleRate > 8000 && sampleRate <= 11025) samples = AUDIO_HAL_11K_SAMPLES;   /*!< set to 11.025k samples per second */
@@ -112,7 +111,6 @@ ES8388::~ES8388()
   if (ESP_OK != es8388_start(ES_MODULE_ADC)){ // Start ES8388 codec chip in A/D converter mode
     return 0; // ERR
   }
-  Serial.println("ES8388 in begin All set");
   return 1; // OK
 }
 
@@ -132,7 +130,6 @@ ES8388::~ES8388()
   #endif
 
     if(ret == 0){
-      Serial.println("ERROR - could not initialize I2S for output");
       return 0; // ERR
     }
 
@@ -158,9 +155,7 @@ ES8388::~ES8388()
       .bits = bits};
 
     _cfg.dac_output = AUDIO_HAL_DAC_OUTPUT_LINE1; // Only line 1 is connected to output
-    _cfg.codec_mode = AUDIO_HAL_CODEC_MODE_DECODE; /*!< select dac */
-    //_cfg.codec_mode = AUDIO_HAL_CODEC_MODE_ENCODE; /*!< select adc */
-    //_cfg.codec_mode = AUDIO_HAL_CODEC_MODE_BOTH; /*!< select both adc and dac */
+    _cfg.codec_mode = AUDIO_HAL_CODEC_MODE_ENCODE; /*!< select adc */ // DO NOT TOUCH!
     _cfg.i2s_iface = i2s_iface;  /*!< set I2S interface configuration */
     if (ESP_OK != es8388_init(&_cfg)){
       Serial.println("ERROR - could not initialize ES8388 with given config settings");

@@ -17,7 +17,6 @@
 */
 
 #include "AudioInI2S.h"
-#include "Arduino.h"// only for debug prints
 
 AudioInI2SClass::AudioInI2SClass() :
   _sampleRate(-1),
@@ -41,7 +40,6 @@ AudioInI2SClass::~AudioInI2SClass()
     int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_in_pin/*=26*/)
     {
   #endif //ESP 32 or 32S2
-    Serial.println("I2S input in normal mode");
     if(_initialized){
       i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
       _initialized = false;
@@ -55,7 +53,7 @@ AudioInI2SClass::~AudioInI2SClass()
 	  .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
 	  .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_I2S | I2S_COMM_FORMAT_STAND_PCM_LONG),
 	  .intr_alloc_flags = 0, // default interrupt priority
-	  .dma_buf_count = 8, // original
+	  .dma_buf_count = 8,
 	  .dma_buf_len = 64,
 	  .use_apll = false,
     .tx_desc_auto_clear = false,
@@ -113,7 +111,6 @@ AudioInI2SClass::~AudioInI2SClass()
       _initialized = false;
       //return 0; // ERR
     }
-    Serial.println("I2S input in ADC mode");
     _use_adc = true;
     _channels = 1; // TODO enable multichannel
 
@@ -123,8 +120,7 @@ AudioInI2SClass::~AudioInI2SClass()
     .sample_rate =  sampleRate, // default 44100,
     .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
     .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
-    //.communication_format = I2S_COMM_FORMAT_I2S_LSB, // deprecated (0x02)
-    .communication_format = I2S_COMM_FORMAT_STAND_MSB, // TODO verify if that really works (0x03)
+    .communication_format = I2S_COMM_FORMAT_STAND_MSB,
     .intr_alloc_flags = 0, // default interrupt priority
     .dma_buf_count = dma_buf_count, // original
     .dma_buf_len = 1024,
@@ -220,51 +216,12 @@ int AudioInI2SClass::read(void* buffer, size_t size)
   int read;
 
   #ifdef ESP_PLATFORM
-    //Serial.print("I2S read up to ");Serial.print(size);
     i2s_read((i2s_port_t) _esp32_i2s_port_number, buffer, (size_t) size, (size_t*) &read, 10);
     if(_use_adc){
       for(int i = 0; i < read / 2; ++i){
-        //Serial.print("[");Serial.print(i);Serial.print("]=");
-        //Serial.print(((uint16_t*)buffer)[i]);Serial.print("=0x");
-        //Serial.print(((uint16_t*)buffer)[i],HEX); Serial.print(" & 0x0FFF =");
         ((uint16_t*)buffer)[i] = ((uint16_t*)buffer)[i] & 0x0FFF;
-        //Serial.print(((uint16_t*)buffer)[i]);Serial.print("=0x");
-        //Serial.println(((uint16_t*)buffer)[i],HEX);
       }
     }
-   /*
-    Serial.print("I2S read bytes = "); Serial.println(read);
-    for(int i = 0; i < read/2; ++i){
-      Serial.print(((uint16_t*)buffer)[i]);Serial.print(" ");
-    }
-    Serial.println("");
-    */
-/*
-  	if(_use_adc){
-  	  i2s_event_t evt;
-  	  Serial.println("I2S adc read");
-  	  if (xQueueReceive(_i2s_queue, &evt, portMAX_DELAY) == pdPASS){
-  	    Serial.println("I2S queue pass");
-  	    if (evt.type == I2S_EVENT_RX_DONE){
-  	      Serial.println("I2S rx done");
-	        i2s_read((i2s_port_t)_esp32_i2s_port_number, buffer, size, (size_t*)&read, 10);
-	        // process the raw data
-  	      for(int i = 0; i < read / 2; ++i){
-  	        //Serial.print("[");Serial.print(i);Serial.print("]=");
-  	        //Serial.print(((uint16_t*)buffer)[i]);Serial.print("=0x");
-  	        //Serial.print(((uint16_t*)buffer)[i],HEX); Serial.print(" & 0x0FFF =");
-  	        ((uint16_t*)buffer)[i] = ((uint16_t*)buffer)[i] & 0x0FFF;
-  	        //Serial.print(((uint16_t*)buffer)[i]);Serial.print("=0x");
-  	        //Serial.println(((uint16_t*)buffer)[i],HEX);
-  	      }
-  	    }
-  	  }
-  	}else{
-  	  i2s_read((i2s_port_t) _esp32_i2s_port_number, buffer, (size_t) size, (size_t*) &read, 10);
-  	}
-*/
-  	//Serial.print("I2S read bytes = ");Serial.println(read);
-
   #else
     read = I2S.read(buffer, size);
   #endif

@@ -40,7 +40,7 @@ struct WaveFileHeader {
   struct SubChunkHeader subChunk2Header;
 } __attribute__((packed));
 
-SDWaveFile::SDWaveFile() : 
+SDWaveFile::SDWaveFile() :
   SDWaveFile(NULL)
 {
 }
@@ -338,11 +338,9 @@ int SDWaveFile::initWrite(int bitsPerSample, long sampleRate){
 
 int SDWaveFile::writeData(void* data, size_t bytesToWrite, bool finished){
   uint32_t written = 0;
-
   written = _file.write((uint8_t *)data,bytesToWrite);
   _dataSize += written;
   if(bytesToWrite != written){
-    Serial.println("ERROR: bytesToWrite != written");
     return 0; // ERR
   }
   if(finished){ // write header and move data from tmp file
