@@ -3,14 +3,14 @@
  a MAX08357 I2S Amp Breakout board.
 
  Circuit:
- * Arduino/Genuino Zero, MKRZero or MKR1000 board
+ * Arduino/Genuino Zero, MKR family and Nano 33 IoT
  * SD breakout or shield connected
  * MAX08357:
    * GND connected GND
    * VIN connected 5V
-   * LRC connected to pin 0 (Zero) or pin 3 (MKR1000, MKRZero)
-   * BCLK connected to pin 1 (Zero) or pin 2 (MKR1000, MKRZero)
-   * DIN connected to pin 9 (Zero) or pin A6 (MKR1000, MKRZero)
+   * LRC connected to pin 0 (Zero) or 3 (MKR) or A2 (Nano)
+   * BCLK connected to pin 1 (Zero) or 2 (MKR) or A3 (Nano)
+   * DIN connected to pin 9 (Zero) or A6 (MKR) or 4 (Nano)
 
  created 15 November 2016
  by Sandeep Mistry
