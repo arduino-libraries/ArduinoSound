@@ -118,10 +118,47 @@ private:
   int _codec_data_out_pin;
   TwoWire _wire;
 public:
+/**
+ * @brief Constructor of ES8388 codech chip class
+ *
+ * @param PA_ENABLE_GPIO for LyraT use value GPIO_NUM_21
+ *
+ * @param wire Initialized Arduino class for I2C communication with codec chip
+ *
+ * @param bit_clock_pin (optional) pin number for clock signal (default value=5 targeted at LyraT board)
+ *
+ * @param word_select_pin (optional) pin number for word select (L/R) signal (default value=25 targeted at LyraT board)
+ *
+ * @param codec_data_in_pin (optional) pin number for codec data input (ESP output) (default value=26 targeted at LyraT board)
+ *
+ * @param codec_data_out_pin (optional) pin number for codec data output (ESP input) (default value=35 targeted at LyraT board)
+ *
+ * @example
+ *     Wire.begin(GPIO_NUM_18, GPIO_NUM_23);
+ *     ES8388 *codec_chip = new ES8388(GPIO_NUM_21, Wire);
+ */
   ES8388(int PA_ENABLE_GPIO, TwoWire wire=Wire, int bit_clock_pin=5, int word_select_pin=25, int codec_data_in_pin=26, int codec_data_out_pin=35);
   virtual ~ES8388();
 
   /* Audio In */
+  /**
+   * @brief Initialize ES8388 codec chip for input
+   *
+   * @param sampleRate samples per second [Hz]. For example 8000, 16000, 44100,... Default 44100
+   *
+   * @param bitsPerSample number of bits used per sample on each channel. Only accaptable values are 16, 24 and 32. Default 16
+   *
+   * @param use_external_mic true=AUX_IN; false=built-in/onboard microphones. Default false
+   *
+   * @param esp32_i2s_port_number I2S module used in ESP. Only aplicable for ESP32 which has two units - only accatable values are 0 and 1
+   *
+   * @return
+   *     - 1 OK
+   *     - 0 ERR
+   * @example
+   *    codec_chip->inBegin(16000, 32, true, 1);
+   *    if( ! codec_chip->inBegin ( src_sample_rate, src_bit_rate) ) { return 0; }
+   */
   #ifdef CONFIG_IDF_TARGET_ESP32
     int inBegin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false, int esp32_i2s_port_number=0);
   #elif CONFIG_IDF_TARGET_ESP32S2
@@ -130,17 +167,52 @@ public:
   virtual void end();
 
   /* Audio Out */
+  /**
+   * @brief Initialize ES8388 codec chip for output
+   *
+   * @param sampleRate samples per second [Hz]. For example 8000, 16000, 44100,... Default 44100
+   *
+   * @param bitsPerSample number of bits used per sample on each channel. Only accaptable values are 16, 24 and 32. Default 16
+   *
+   * @param esp32_i2s_port_number I2S module used in ESP. Only aplicable for ESP32 which has two units - only accatable values are 0 and 1
+   *
+   * @return
+   *     - 1 OK
+   *     - 0 ERR
+   * @example
+   *    codec_chip->outBegin(16000, 32, true, 1);
+   *    if( ! codec_chip->outBegin ( src_sample_rate, src_bit_rate) ) { return 0; }
+   */
   #ifdef CONFIG_IDF_TARGET_ESP32
-    int outBegin(long sampleRate=44100, int bitsPerSample=16, const int esp32_i2s_port_number=0);
+    int outBegin(long sampleRate=44100, int bitsPerSample=16, int esp32_i2s_port_number=0);
   #elif CONFIG_IDF_TARGET_ESP32S2
     int outBegin(long sampleRate=44100, int bitsPerSample=16);
   #endif
 
   /* Audio In + Out */
+  /**
+   * @brief Initialize ES8388 codec chip for both input and output
+   *
+   * @param sampleRate samples per second [Hz]. For example 8000, 16000, 44100,... Default 44100
+   *
+   * @param bitsPerSample number of bits used per sample on each channel. Only accaptable values are 16, 24 and 32. Default 16
+   *
+   * @param use_external_mic true=AUX_IN; false=built-in/onboard microphones. Default false
+   *
+   * @param esp32_i2s_port_number I2S module used in ESP. Only aplicable for ESP32 which has two units - only accatable values are 0 and 1
+   *
+   * @return
+   *     - 1 OK
+   *     - 0 ERR
+   * @example
+   *    codec_chip->begin(16000, 32, true, 1);
+   *    if( ! codec_chip->begin ( src_sample_rate, src_bit_rate) ) { return 0; }
+   */
   #ifdef CONFIG_IDF_TARGET_ESP32
+    int begin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false, int esp32_i2s_port_number=0);
+  #elif CONFIG_IDF_TARGET_ESP32S2
     int begin(long sampleRate=44100, int bitsPerSample=16, bool use_external_mic=false);
   #endif
-
 
   /* Original functions from ESP-ADF */
 

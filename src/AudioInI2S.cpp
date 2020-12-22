@@ -33,11 +33,11 @@ AudioInI2SClass::~AudioInI2SClass()
 
 #if defined ESP_PLATFORM
   #if defined ESP32
-    int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_in_pin/*=26*/, const int esp32_i2s_port_number/*=0*/)
+    int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, int bit_clock_pin/*=5*/, int word_select_pin/*=25*/, int data_in_pin/*=26*/, int esp32_i2s_port_number/*=0*/)
     {
       _esp32_i2s_port_number = esp32_i2s_port_number;
   #elif defined ESP32S2
-    int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, const int bit_clock_pin/*=5*/, const int word_select_pin/*=25*/, const int data_in_pin/*=26*/)
+    int AudioInI2SClass::begin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, int bit_clock_pin/*=5*/, int word_select_pin/*=25*/, int data_in_pin/*=26*/)
     {
   #endif //ESP 32 or 32S2
     if(_initialized){
@@ -46,12 +46,12 @@ AudioInI2SClass::~AudioInI2SClass()
     }
     _use_adc = false;
 
-    static const i2s_config_t i2s_config = {
+    static i2s_config_t i2s_config = {
 	  .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
 	  .sample_rate =  sampleRate, // default 44100,
 	  .bits_per_sample = (i2s_bits_per_sample_t) bitsPerSample, // default 16,
 	  .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-	  .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_I2S | I2S_COMM_FORMAT_STAND_PCM_LONG),
+    .communication_format = (i2s_comm_format_t) 6, // TODO investiage settings for aux in
 	  .intr_alloc_flags = 0, // default interrupt priority
 	  .dma_buf_count = 8,
 	  .dma_buf_len = 64,
@@ -59,7 +59,7 @@ AudioInI2SClass::~AudioInI2SClass()
     .tx_desc_auto_clear = false,
     .fixed_mclk = 0
 	};
-	static const i2s_pin_config_t pin_config = {
+	static i2s_pin_config_t pin_config = {
 	    .bck_io_num = bit_clock_pin,
 	    .ws_io_num = word_select_pin,
 	    .data_out_num = I2S_PIN_NO_CHANGE,
@@ -99,11 +99,11 @@ AudioInI2SClass::~AudioInI2SClass()
 
 #if defined ESP_PLATFORM
   #if defined ESP32
-    int AudioInI2SClass::beginADC(long sampleRate/*=44100*/, int bitsPerSample/*=12*/, const int adc_unit/*=1*/, const int adc_channel/*=0*/, const int esp32_i2s_port_number/*=0*/)
+    int AudioInI2SClass::beginADC(long sampleRate/*=44100*/, int bitsPerSample/*=12*/, int adc_unit/*=1*/, int adc_channel/*=0*/, int esp32_i2s_port_number/*=0*/)
     {
       _esp32_i2s_port_number = esp32_i2s_port_number;
   #elif defined ESP32S2
-    int int AudioInI2SClass::beginADC(long sampleRate/*=44100*/, int bitsPerSample/*=12*/, const int adc_unit/*=1*/, const int adc_channel/*=0*/)
+    int int AudioInI2SClass::beginADC(long sampleRate/*=44100*/, int bitsPerSample/*=12*/, int adc_unit/*=1*/, int adc_channel/*=0*/)
     {
   #endif //ESP 32 or 32S2
     if(_initialized){
@@ -114,8 +114,8 @@ AudioInI2SClass::~AudioInI2SClass()
     _use_adc = true;
     _channels = 1; // TODO enable multichannel
 
-    const int dma_buf_count = 4;
-    static const i2s_config_t i2s_config = {
+    int dma_buf_count = 4;
+    static i2s_config_t i2s_config = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN),
     .sample_rate =  sampleRate, // default 44100,
     .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,

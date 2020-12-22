@@ -36,10 +36,10 @@ public:
 
   #if defined ESP_PLATFORM
     #if defined ESP32
-      int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=26, const int esp32_i2s_port_number=0);
-      int beginDAC(long sampleRate=44100, const int esp32_i2s_port_number=0);
+      int outBegin(long sampleRate=44100, int bitsPerSample=16, int bit_clock_pin=5, int word_select_pin=25, int data_out_pin=26, int esp32_i2s_port_number=0);
+      int beginDAC(long sampleRate=44100, int esp32_i2s_port_number=0);
     #elif defined ESP32S2
-      int outBegin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_out_pin=26);
+      int outBegin(long sampleRate=44100, int bitsPerSample=16, int bit_clock_pin=5, int word_select_pin=25, int data_out_pin=26);
       int beginDAC(long sampleRate=44100);
     #endif
   #endif
@@ -71,9 +71,11 @@ private:
   static void onI2STransmit();
 
 private:
-  AudioIn* _input; // this belongs here
+  AudioIn* _input;
   bool _loop;
   bool _paused;
+
+protected:
   bool _initialized;
 };
 

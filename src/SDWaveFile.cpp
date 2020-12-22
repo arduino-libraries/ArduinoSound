@@ -369,7 +369,9 @@ int SDWaveFile::finishWavWrite(uint32_t numOfBytes){
 
   _file.close(); // close tmp file with only data
   // Remove previous file and write header
-  SD.remove(_filename);
+  if(SD.exists(_filename)){
+    SD.remove(_filename);
+  }
   _file = SD.open(_filename, FILE_WRITE);
   _file.write((uint8_t *)&header, sizeof(header)/sizeof(uint8_t));
   _file.close();

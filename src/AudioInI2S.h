@@ -34,11 +34,11 @@ public:
   virtual ~AudioInI2SClass();
 
   #if defined ESP_PLATFORM && defined ESP32
-	 int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_in_pin=35, const int esp32_i2s_port_number=0);
-	 int beginADC(long sampleRate=44100, int bitsPerSample=16, const int adc_unit=1, const int adc_channel=0, const int esp32_i2s_port_number=0);
+	 int begin(long sampleRate=44100, int bitsPerSample=16, int bit_clock_pin=5, int word_select_pin=25, int data_in_pin=35, int esp32_i2s_port_number=0);
+	 int beginADC(long sampleRate=44100, int bitsPerSample=16, int adc_unit=1, int adc_channel=0, int esp32_i2s_port_number=0);
   #elif defined ESP_PLATFORM && defined ESP32S2
-   int begin(long sampleRate=44100, int bitsPerSample=16, const int bit_clock_pin=5, const int word_select_pin=25, const int data_in_pin=35);
-   int beginADC(long sampleRate=44100, int bitsPerSample=16, const int adc_unit=1, const int adc_channel=0);
+   int begin(long sampleRate=44100, int bitsPerSample=16, int bit_clock_pin=5, int word_select_pin=25, int data_in_pin=35);
+   int beginADC(long sampleRate=44100, int bitsPerSample=16, int adc_unit=1, int adc_channel=0);
   #else
     int begin(long sampleRate, int bitsPerSample);
     #ifdef I2S_HAS_SET_BUFFER_SIZE
@@ -70,11 +70,12 @@ private:
   long _sampleRate;
   int _bitsPerSample;
   bool _callbackTriggered;
+
+protected:
   bool _initialized;
   #if defined ESP_PLATFORM
     bool _use_adc;
     QueueHandle_t _i2s_queue;
-    //TaskHandle_t readerTaskHandle;
   #endif
 };
 
