@@ -105,7 +105,6 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
       i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
       _initialized = false;
     }
-    bool use_dac = true;
 
     static i2s_config_t i2s_config = {
           .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN),
@@ -229,15 +228,11 @@ int AudioOutI2SClass::startPlayback(AudioIn& input, bool loop)
   }
 #ifdef ESP_PLATFORM
   if(!_initialized){
-    Serial.println("AudioOutI2SClass::startPlayback received input ");
-    Serial.print("sampleRate = ");Serial.println(input.sampleRate());
-    Serial.print("bitsPerSample = ");Serial.println(input.bitsPerSample());
     if (!outBegin(input.sampleRate(), input.bitsPerSample())) {
       return 0;
     }
     if (!beginInput(&input)) {
   	i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
-  	  Serial.println("Error");
       return 0;
     }
   }
