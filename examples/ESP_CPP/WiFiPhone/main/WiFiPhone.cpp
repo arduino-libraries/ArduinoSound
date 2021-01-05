@@ -39,6 +39,7 @@ ES8388 *codec_chip;
 const int sampleRate = 8000;
 const int bitsPerSample = 16;
 const int buffer_bytes = ESP_NOW_MAX_DATA_LEN;
+const int data_bytes = buffer_bytes - 1; // one byte for debug stamp
 uint8_t *audio_buffer;
 
 
@@ -52,8 +53,6 @@ uint64_t pos = 0;
 #define CHANNEL_MASTER 1
 #define CHANNEL_SLAVE 1
 #define PRINTSCANRESULTS 0
-#define DATASIZE 48
-uint8_t data[DATASIZE];
 
 const int buffer_size = ESP_NOW_MAX_DATA_LEN;
 typedef struct buffer {
@@ -61,7 +60,6 @@ typedef struct buffer {
   int size;
 } buffer_t;
 
-std::queue<buffer_t> q_wifi_out;
 std::queue<buffer_t> q_wifi_in;
 
 void InitESPNow();
@@ -77,6 +75,15 @@ void setup() {
   disableCore1WDT();
   audio_buffer = (uint8_t*)malloc(buffer_bytes);
   Serial.begin(115200); // setup the serial
+
+  Serial.print("ESP_NOW_MAX_DATA_LEN = "); Serial.println(ESP_NOW_MAX_DATA_LEN);
+  Serial.print("buffer_size = "); Serial.println(buffer_size);
+  Serial.print("data_bytes = "); Serial.println(data_bytes);
+  int Bps = sampleRate * (bitsPerSample/8) * 2;
+  Serial.print("Bytes per sec = "); Serial.println(Bps);
+  float foo = (float)Bps / data_bytes;
+  Serial.print("ms per packet = "); Serial.println((1.0/foo)*1000.0);
+
 
   // init codec chip
   Wire.begin(GPIO_NUM_18, GPIO_NUM_23);
@@ -109,19 +116,23 @@ void setup() {
   Serial.println("All set - end of setup()");
 }
 
+// TODO delete
 void get_debug_data(buffer_t *buf){
   static uint8_t cnt = 0;
   memset(buf->data, cnt++, buffer_size);
   buf->size =buffer_size;
 }
 
+// TODO delete
 void print_arr(void* audio_buffer, int buffer_bytes){
   for(int i = 0; i < buffer_bytes/2; ++i){
     Serial.print(((uint16_t*)audio_buffer)[i]);Serial.print(" ");
   }
 }
 
-void loop() {
+void loop(){
+  //static uint8_t stamp = 0; // debug
+
   // If Slave is found, it would be populate in `slave` variable
   // We will check if `slave` is defined and then we proceed further
   if (SlaveCnt > 0) { // check if slave channel is defined
@@ -130,43 +141,27 @@ void loop() {
     manageSlave();
     // pair success or already paired
     // Send data to device
-#ifdef I_AM_TX
-    //Serial.print("loop() reading I2S:");
-    int ret = codec_chip->read(audio_buffer, buffer_bytes);
+    #ifdef I_AM_TX
+      int ret = codec_chip->read(audio_buffer, buffer_bytes);
+      //int ret = codec_chip->read(audio_buffer, data_bytes); // debug
+      //Serial.print("Send stamp "); Serial.println(stamp);
+      //audio_buffer[buffer_bytes-1] = stamp++; // debug
+      sendData(audio_buffer, buffer_bytes);
+    #endif // I_AM_TX
 
-    //Serial.print("ret = ");Serial.println(ret);
-    sendData(audio_buffer, ret);
-    //print_arr((void*)audio_buffer,buffer_bytes);
-
-    // debug
-    //get_debug_data(&buf);
-    //Serial.print("Sent ");Serial.println(buf.data[0]);
-    //sendData(buf.data, buf.size);
-    // end of debug
-
-#endif
-    if(q_wifi_in.size() > 5){
-      //Serial.println("Play entire Queue");
-      while(q_wifi_in.size()){
-      //if(q_wifi_in.size()){
-        codec_chip->write((void*)q_wifi_in.front().data, q_wifi_in.front().size);
-        //Serial.println("");
-        //print_arr((void*)q_wifi_in.front().data, q_wifi_in.front().size);
-        q_wifi_in.pop();
-        //Serial.print("After playback - Q size = ");
-        //Serial.println(q_wifi_in.size());
+    #ifdef I_AM_RX
+      if(q_wifi_in.size()){
+          codec_chip->write((void*)q_wifi_in.front().data, q_wifi_in.front().size);
+          //Serial.print("Received stamp "); Serial.println(q_wifi_in.front().data[buffer_bytes-1]);
+          q_wifi_in.pop();
       }
-    }
+    #endif // I_AM_RX
   }else{
     // No slave found to process
     // Scan for slave
     ScanForSlave();
-  }
-  // wait for 2 seconds to run the logic again
-  //delay(2000);
-  // TODO send audio buffer over WiFi
-  // TODO play buffer received from WiFi
-}
+  } // if (SlaveCnt > 0)
+} // main loop()
 
 
 void InitESPNow() {
@@ -175,9 +170,6 @@ void InitESPNow() {
   }
   else {
     Serial.println("ESPNow Init Failed");
-    // Retry InitESPNow, add a counte and then restart?
-    // InitESPNow();
-    // or Simply Restart
     ESP.restart();
   }
 }
@@ -201,7 +193,6 @@ void ScanForSlave() {
       if (PRINTSCANRESULTS) {
         Serial.print(i + 1); Serial.print(": "); Serial.print(SSID); Serial.print(" ["); Serial.print(BSSIDstr); Serial.print("]"); Serial.print(" ("); Serial.print(RSSI); Serial.print(")"); Serial.println("");
       }
-      //delay(10);
       // Check if the current device starts with `Slave`
       if (SSID.indexOf("ESPNOW") == 0) {
         // SSID of interest
@@ -236,19 +227,9 @@ void manageSlave() {
     for (int i = 0; i < SlaveCnt; i++) {
       const esp_now_peer_info_t *peer = &slaves[i];
       const uint8_t *peer_addr = slaves[i].peer_addr;
-      //Serial.print("Processing: ");
-      //for (int ii = 0; ii < 6; ++ii ) {
-      //  Serial.print((uint8_t) slaves[i].peer_addr[ii], HEX);
-      //  if (ii != 5) Serial.print(":");
-      //}
-      //Serial.print(" Status: ");
       // check if the peer exists
       bool exists = esp_now_is_peer_exist(peer_addr);
-      if (exists) {
-        ;
-        // Slave already paired.
-        //Serial.println("Already Paired");
-      } else {
+      if (!exists) {
         // Slave not paired, attempt pair
         esp_err_t addStatus = esp_now_add_peer(peer);
         if (addStatus == ESP_OK) {
@@ -256,24 +237,23 @@ void manageSlave() {
           //Serial.println("Pair success");
         } else if (addStatus == ESP_ERR_ESPNOW_NOT_INIT) {
           // How did we get so far!!
-          Serial.println("ESPNOW Not Init");
+          //Serial.println("ESPNOW Not Init");
         } else if (addStatus == ESP_ERR_ESPNOW_ARG) {
-          Serial.println("Add Peer - Invalid Argument");
+          //Serial.println("Add Peer - Invalid Argument");
         } else if (addStatus == ESP_ERR_ESPNOW_FULL) {
-          Serial.println("Peer list full");
+          //Serial.println("Peer list full");
         } else if (addStatus == ESP_ERR_ESPNOW_NO_MEM) {
-          Serial.println("Out of memory");
+          //Serial.println("Out of memory");
         } else if (addStatus == ESP_ERR_ESPNOW_EXIST) {
-          Serial.println("Peer Exists");
+          //Serial.println("Peer Exists");
         } else {
-          Serial.println("Not sure what happened");
+          //Serial.println("Not sure what happened");
         }
-        //delay(100);
       }
     }
   } else {
     // No slave found to process
-    Serial.println("No Slave found to process");
+    //Serial.println("No Slave found to process");
   }
 }
 
@@ -300,54 +280,19 @@ void sendData(uint8_t *data, size_t len) {
     } else {
       //Serial.println("Not sure what happened");
     }
-    //delay(100);
   }
 }
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  //char macStr[18];
-  //unsigned long realTime;
-  //snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
-  //         mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-  //Serial.print("Last Packet Sent to: "); Serial.println(macStr);
-  //Serial.print("Last Packet Send Status: "); Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-  //realTime = millis();
-  //Serial.print("Send delay: "); Serial.print(realTime - lastSentTime); Serial.println(" ms.");
-  //lastSentTime = realTime;
+  // NOP
 }
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
-buffer_t buf;
-memcpy(buf.data, data, data_len);
-buf.size = data_len;
-q_wifi_in.push(buf);
-#ifdef I_AM_RX
-  //Serial.print("Received ");
-  //print_arr((void*)data,data_len);
-  //Serial.print(data[0]);
-  //Serial.print("; Q size = ");
-  //Serial.println(q_wifi_in.size());
-  /*
-  if(q_wifi_in.size() > 50){
-    Serial.println("Play entire Queue");
-    while(q_wifi_in.size()){
-    codec_chip->write((void*)q_wifi_in.data, q_wifi_in.size);
-    q_wifi_in.pop();
-    }
-  }
-  */
-
-  //codec_chip->write((void*)data, data_len);
-#endif
-  //char macStr[18];
-  //unsigned long realTime;
-  //snprintf(macStr, sizeof(macStr), "%02x:%02x:%02x:%02x:%02x:%02x",
-  //         mac_addr[0], mac_addr[1], mac_addr[2], mac_addr[3], mac_addr[4], mac_addr[5]);
-  //Serial.print("ttLast Packet Recv from: "); Serial.println(macStr);
-  //Serial.print("ttLast Packet Recv Data: "); Serial.println((char *)data);
-  //Serial.println("");
-  //realTime = millis();
-  //Serial.print("Recv delay: "); Serial.print(realTime - lastRecvTime); Serial.println(" ms.");
-  //lastRecvTime = realTime;
+  #ifdef I_AM_RX
+    buffer_t buf;
+    memcpy(buf.data, data, data_len);
+    buf.size = data_len;
+    q_wifi_in.push(buf);
+  #endif
 }
 
 void configDeviceAP() {
@@ -362,5 +307,3 @@ void configDeviceAP() {
     Serial.println("AP Config Success. Broadcasting with AP: " + String(SSID));
   }
 }
-
-
