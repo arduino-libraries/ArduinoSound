@@ -119,9 +119,6 @@ ES8388::~ES8388()
   #endif
 {
   int ret;
-  Serial.println("ES8388 received input ");
-  Serial.print("sampleRate = ");Serial.println(sampleRate);
-  Serial.print("bitsPerSample = ");Serial.println(bitsPerSample);
   #ifdef CONFIG_IDF_TARGET_ESP32
     ret = AudioOutI2SClass::outBegin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_in_pin, esp32_i2s_port_number);
   #elif CONFIG_IDF_TARGET_ESP32S2
@@ -157,19 +154,15 @@ ES8388::~ES8388()
     _cfg.codec_mode = AUDIO_HAL_CODEC_MODE_ENCODE; /*!< select adc */ // DO NOT TOUCH!
     _cfg.i2s_iface = i2s_iface;  /*!< set I2S interface configuration */
     if (ESP_OK != es8388_init(&_cfg)){
-      Serial.println("ERROR - could not initialize ES8388 with given config settings");
       return 0; // ERR
     }
     if (ESP_OK != es8388_config_i2s(_cfg.codec_mode, &i2s_iface)){
-      Serial.println("ERROR - could not configure I2S in ES8388");
       return 0; // ERR
     }
     if (ESP_OK != es8388_config_dac_output((es_dac_output_t)(DAC_OUTPUT_LOUT1 | DAC_OUTPUT_ROUT1))){
-      Serial.println("ERROR - could not config DAC in ES8388");
       return 0; // ERR
     }
     if (ESP_OK != es8388_start(ES_MODULE_DAC)){ // Start ES8388 codec chip in D/A converter mode
-      Serial.println("ERROR - could not start ES8388");
       return 0; // ERR
     }
     return 1; // OK
@@ -195,7 +188,7 @@ ES8388::~ES8388()
     .sample_rate =  sampleRate, // default 44100,
     .bits_per_sample = (i2s_bits_per_sample_t) bitsPerSample, // default 16,
     .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-    .communication_format = (i2s_comm_format_t) 6, // TODO change this if it changes in AudioInI2S.cpp:begin()
+    .communication_format = (i2s_comm_format_t) I2S_COMM_FORMAT_STAND_PCM_SHORT,
     .intr_alloc_flags = 0, // default interrupt priority
     .dma_buf_count = 8,
     .dma_buf_len = 64,
@@ -565,7 +558,7 @@ esp_err_t ES8388::es8388_init(audio_hal_codec_config_t *cfg)
     }
     res |= es_write_reg(ES8388_ADDR, ES8388_ADCCONTROL2, tmp);  //0x00 LINSEL & RINSEL, LIN1/RIN1 as ADC Input; DSSEL,use one DS Reg11; DSR, LINPUT1-RINPUT1
     res |= es_write_reg(ES8388_ADDR, ES8388_ADCCONTROL3, 0x02);
-    res |= es_write_reg(ES8388_ADDR, ES8388_ADCCONTROL4, 0x0d); // Left/Right data, Left/Right justified mode, Bits length, I2S format
+    res |= es_write_reg(ES8388_ADDR, ES8388_ADCCONTROL4, 0x0d); // 0000 1101 = MSb (00) left data = left ADC, right data = right ADC; (0) ???; (011) 16-bit serial audio data word length; (01) Left Justified // Left/Right data, Left/Right justified mode, Bits length, I2S format
     res |= es_write_reg(ES8388_ADDR, ES8388_ADCCONTROL5, 0x02);  //ADCFsMode,singel SPEED,RATIO=256
     //ALC for Microphone
     res |= es8388_set_adc_dac_volume(ES_MODULE_ADC, 0, 0);      // 0db

@@ -39,9 +39,6 @@ ES8388 *codec_chip;
 const int sampleRate = 8000;
 const int bitsPerSample = 16;
 const int buffer_bytes = ESP_NOW_MAX_DATA_LEN;
-const int data_bytes = buffer_bytes - 1; // one byte for debug stamp
-uint8_t *audio_buffer;
-
 
 #define NUMSLAVES 20
 esp_now_peer_info_t slaves[NUMSLAVES] = {};
@@ -59,31 +56,25 @@ typedef struct buffer {
   uint8_t data[buffer_size];
   int size;
 } buffer_t;
+uint8_t audio_buffer[buffer_size];
 
 std::queue<buffer_t> q_wifi_in;
 
 void InitESPNow();
 void ScanForSlave();
 void manageSlave();
-void sendData(uint8_t *data, size_t len);
+esp_err_t sendData(uint8_t *data, size_t len);
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len);
 void configDeviceAP();
 
+TaskHandle_t Core0Task;
+void Core0TaskCode(void * parameter);
+
 void setup() {
   disableCore0WDT();
   disableCore1WDT();
-  audio_buffer = (uint8_t*)malloc(buffer_bytes);
   Serial.begin(115200); // setup the serial
-
-  Serial.print("ESP_NOW_MAX_DATA_LEN = "); Serial.println(ESP_NOW_MAX_DATA_LEN);
-  Serial.print("buffer_size = "); Serial.println(buffer_size);
-  Serial.print("data_bytes = "); Serial.println(data_bytes);
-  int Bps = sampleRate * (bitsPerSample/8) * 2;
-  Serial.print("Bytes per sec = "); Serial.println(Bps);
-  float foo = (float)Bps / data_bytes;
-  Serial.print("ms per packet = "); Serial.println((1.0/foo)*1000.0);
-
 
   // init codec chip
   Wire.begin(GPIO_NUM_18, GPIO_NUM_23);
@@ -93,6 +84,7 @@ void setup() {
     Serial.println("Failed to initialize I2S!");
     while (1); // do nothing
   }
+  codec_chip->volume(100);
   Serial.println("codec setup OK.");
 
   //Set device in AP+STA mode to begin with
@@ -113,26 +105,41 @@ void setup() {
   // Scan for slave
   ScanForSlave();
 
+  xTaskCreatePinnedToCore(
+    Core0TaskCode, /* Function to implement the task */
+    "Core0Task", /* Name of the task */
+    10000,  /* Stack size in words */
+    NULL,  /* Task input parameter */
+    0,  /* Priority of the task */
+    &Core0Task,  /* Task handle. */
+    0); /* Core where the task should run */
+
   Serial.println("All set - end of setup()");
 }
 
-// TODO delete
-void get_debug_data(buffer_t *buf){
-  static uint8_t cnt = 0;
-  memset(buf->data, cnt++, buffer_size);
-  buf->size =buffer_size;
+// RX loop
+void Core0TaskCode(void * parameter){
+while(true){ // main loop
+  // If Slave is found, it would be populate in `slave` variable
+  // We will check if `slave` is defined and then we proceed further
+  if (SlaveCnt > 0) { // check if slave channel is defined
+    #ifdef I_AM_RX
+      if(q_wifi_in.size()){
+          codec_chip->write((void*)q_wifi_in.front().data, q_wifi_in.front().size);
+          q_wifi_in.pop();
+      }
+    #endif // I_AM_RX
+  }else{
+    // No slave found to process - "play" silence
+    uint8_t silence[buffer_size];
+    memset(silence, 00, buffer_size);
+    codec_chip->write((void*)silence, buffer_size);
+  } // if (SlaveCnt > 0)
+} // main loop
 }
 
-// TODO delete
-void print_arr(void* audio_buffer, int buffer_bytes){
-  for(int i = 0; i < buffer_bytes/2; ++i){
-    Serial.print(((uint16_t*)audio_buffer)[i]);Serial.print(" ");
-  }
-}
-
+// TX loop
 void loop(){
-  //static uint8_t stamp = 0; // debug
-
   // If Slave is found, it would be populate in `slave` variable
   // We will check if `slave` is defined and then we proceed further
   if (SlaveCnt > 0) { // check if slave channel is defined
@@ -142,23 +149,15 @@ void loop(){
     // pair success or already paired
     // Send data to device
     #ifdef I_AM_TX
-      int ret = codec_chip->read(audio_buffer, buffer_bytes);
-      //int ret = codec_chip->read(audio_buffer, data_bytes); // debug
-      //Serial.print("Send stamp "); Serial.println(stamp);
-      //audio_buffer[buffer_bytes-1] = stamp++; // debug
-      sendData(audio_buffer, buffer_bytes);
-    #endif // I_AM_TX
+      codec_chip->read(audio_buffer, buffer_bytes);
 
-    #ifdef I_AM_RX
-      if(q_wifi_in.size()){
-          codec_chip->write((void*)q_wifi_in.front().data, q_wifi_in.front().size);
-          //Serial.print("Received stamp "); Serial.println(q_wifi_in.front().data[buffer_bytes-1]);
-          q_wifi_in.pop();
+      if(ESP_OK != sendData(audio_buffer, buffer_bytes)){
+        // No slave found to process
+        ScanForSlave();
       }
-    #endif // I_AM_RX
+    #endif // I_AM_TX
   }else{
     // No slave found to process
-    // Scan for slave
     ScanForSlave();
   } // if (SlaveCnt > 0)
 } // main loop()
@@ -179,7 +178,6 @@ void ScanForSlave() {
   //reset slaves
   memset(slaves, 0, sizeof(slaves));
   SlaveCnt = 0;
-  Serial.println("");
   if (scanResults == 0) {
     Serial.println("No WiFi devices in AP Mode found");
   } else {
@@ -257,11 +255,12 @@ void manageSlave() {
   }
 }
 
-void sendData(uint8_t *data, size_t len) {
+esp_err_t sendData(uint8_t *data, size_t len) {
+  esp_err_t result = ESP_ERR_NOT_FOUND;
   for (int i = 0; i < SlaveCnt; i++) {
     const uint8_t *peer_addr = slaves[i].peer_addr;
 
-    esp_err_t result = esp_now_send(peer_addr, data, len);
+    result = esp_now_send(peer_addr, data, len);
 
     //Serial.print("Send Status: ");
     if (result == ESP_OK) {
@@ -281,6 +280,7 @@ void sendData(uint8_t *data, size_t len) {
       //Serial.println("Not sure what happened");
     }
   }
+  return result;
 }
 
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
