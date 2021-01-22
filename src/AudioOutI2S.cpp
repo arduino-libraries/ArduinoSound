@@ -76,9 +76,9 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
       .intr_alloc_flags = 0, // default interrupt priority
       .dma_buf_count = 8,
       .dma_buf_len = 64,
-      .use_apll = false 
+      .use_apll = false
     };
-    static i2s_pin_config_t pin_config = {
+    i2s_pin_config_t pin_config = {
       .bck_io_num = bit_clock_pin,
       .ws_io_num = word_select_pin,
       .data_out_num = data_out_pin,
@@ -109,30 +109,32 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
       _initialized = false;
     }
 
-    static i2s_config_t i2s_config = {
-          .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN),
-          .sample_rate = sampleRate, // default 44100
-          .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
-          .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-          .communication_format = I2S_COMM_FORMAT_STAND_MAX,
-          .intr_alloc_flags = 0, // default interrupt priority
-          .dma_buf_count = 8,
-          .dma_buf_len = 64,
-          .use_apll = false
-      };
+    i2s_config_t i2s_config = {
+      .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_TX | I2S_MODE_DAC_BUILT_IN),
+      .sample_rate = sampleRate, // default 44100
+      .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
+      .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+      //.communication_format = I2S_COMM_FORMAT_STAND_PCM_SHORT,
+      .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_I2S | I2S_COMM_FORMAT_STAND_PCM_SHORT),
+      //.communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_I2S | I2S_COMM_FORMAT_STAND_PCM_LONG),
+      .intr_alloc_flags = 0, // default interrupt priority
+      .dma_buf_count = 8,
+      .dma_buf_len = 64,
+      .use_apll = false
+    };
 
-      int ret = i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, 0, NULL);   //install and start i2s driver
-      if(ret != ESP_OK){
-        return 0;
-      }
-        i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
-        ret = i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, NULL);
-      if(ret != ESP_OK){
-        return 0;
-      }
+    int ret = i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, 0, NULL);   //install and start i2s driver
+    if(ret != ESP_OK){
+      return 0;
+    }
+    i2s_set_dac_mode(I2S_DAC_CHANNEL_BOTH_EN);
+    ret = i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, NULL);
+    if(ret != ESP_OK){
+      return 0;
+    }
 
-      _initialized = true;
-      return 1; // OK
+    _initialized = true;
+    return 1; // OK
   }
 #endif  // ESP_PLATFORM
 

@@ -49,21 +49,20 @@ AudioInI2SClass::~AudioInI2SClass()
     }
 
     _use_adc = false;
-
-    static i2s_config_t i2s_config = {
+    i2s_config_t i2s_config = {
       .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
       .sample_rate =  sampleRate, // default 44100,
       .bits_per_sample = (i2s_bits_per_sample_t) bitsPerSample, // default 16,
       .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-      .communication_format = I2S_COMM_FORMAT_STAND_PCM_SHORT,
+      //.communication_format = I2S_COMM_FORMAT_STAND_PCM_SHORT, // working but noisy at higher bps
+      .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_I2S | I2S_COMM_FORMAT_STAND_PCM_SHORT),
+      //.communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_I2S | I2S_COMM_FORMAT_STAND_PCM_LONG),
      .intr_alloc_flags = 0, // default interrupt priority
      .dma_buf_count = 8,
      .dma_buf_len = 64,
-     .use_apll = false,
-     .tx_desc_auto_clear = false,
-     .fixed_mclk = 0
+     .use_apll = false
 	};
-	static i2s_pin_config_t pin_config = {
+	i2s_pin_config_t pin_config = {
 	   .bck_io_num = bit_clock_pin,
 	   .ws_io_num = word_select_pin,
 	   .data_out_num = I2S_PIN_NO_CHANGE,
@@ -84,7 +83,7 @@ AudioInI2SClass::~AudioInI2SClass()
     if (!I2S.begin(I2S_PHILIPS_MODE, sampleRate, bitsPerSample)) {
       return 0; // ERR
     }
-#endif // ifdef ESP_PLATFORM
+#endif // if defined ESP_PLATFORM
 
   _sampleRate = sampleRate;
   _bitsPerSample = bitsPerSample;
@@ -120,18 +119,16 @@ AudioInI2SClass::~AudioInI2SClass()
     _channels = 1; // TODO enable multichannel
 
     int dma_buf_count = 4;
-    static i2s_config_t i2s_config = {
+    i2s_config_t i2s_config = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN),
     .sample_rate =  sampleRate, // default 44100,
     .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
     .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
     .communication_format = I2S_COMM_FORMAT_STAND_MSB,
     .intr_alloc_flags = 0, // default interrupt priority
-    .dma_buf_count = dma_buf_count, // original
+    .dma_buf_count = dma_buf_count,
     .dma_buf_len = 1024,
-    .use_apll = false,
-    .tx_desc_auto_clear = false,
-    .fixed_mclk = 0
+    .use_apll = false
   };
 
   if (ESP_OK != i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, dma_buf_count, &_i2s_queue)){
