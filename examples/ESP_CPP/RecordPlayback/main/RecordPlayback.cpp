@@ -82,12 +82,16 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
   bool finished = false;
   unsigned long startMillis = millis();
   unsigned long timeElapsed = 0;
+  int prev_sec = 0; // help variable for printing remaing time
   Serial.print("Recording started (");Serial.print(duration);Serial.println("s)");
-  while(!finished){
+  do{
     bytesToWrite = codec_chip->read(data, buffer_size);
     if(timeElapsed >= duration*1000){
       finished = true;
       ret = true;
+    }
+    if(finished){
+      Serial.println("Recording finished - saving file (this may take a while)");
     }
     ret = waveFile.writeData(data, bytesToWrite, finished);
     if(!ret){
@@ -95,8 +99,12 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
       codec_chip->end();
       return ret;
     }
+    if(prev_sec != timeElapsed/1000){
+    Serial.print("Remaining time ");Serial.print(duration-timeElapsed/1000);Serial.println(" s");
+      prev_sec = timeElapsed/1000;
+    }
     timeElapsed = millis() - startMillis;
-  } // write loop
+  }while(!finished); // write loop
   Serial.println("Recording finished");
   codec_chip->end();
   return ret;
@@ -202,7 +210,7 @@ void setup() {
 void loop() {
   bool use_external_mic = false;
   int recordDuration = 5; // number of seconds to keep recording
-  if(!record_wav_file(filename, recordDuration, 16, 8000, use_external_mic)){
+  if(!record_wav_file(filename, recordDuration, 24, 32000, use_external_mic)){
     Serial.println("Record failed!");
   }else{ // Recording succeeded - proceed to playback
     if(!play_wav_file(filename)){

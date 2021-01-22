@@ -44,40 +44,45 @@ AudioInI2SClass::~AudioInI2SClass()
       i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
       _initialized = false;
     }
+    if(bitsPerSample % 8 != 0 || bitsPerSample > 32 || bitsPerSample < 16){
+      return 0; // ERR
+    }
+
     _use_adc = false;
 
     static i2s_config_t i2s_config = {
-	  .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
-	  .sample_rate =  sampleRate, // default 44100,
-	  .bits_per_sample = (i2s_bits_per_sample_t) bitsPerSample, // default 16,
-	  .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-    .communication_format = I2S_COMM_FORMAT_STAND_PCM_SHORT,
-	  .intr_alloc_flags = 0, // default interrupt priority
-	  .dma_buf_count = 8,
-	  .dma_buf_len = 64,
-	  .use_apll = false,
-    .tx_desc_auto_clear = false,
-    .fixed_mclk = 0
+      .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
+      .sample_rate =  sampleRate, // default 44100,
+      .bits_per_sample = (i2s_bits_per_sample_t) bitsPerSample, // default 16,
+      .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
+      .communication_format = I2S_COMM_FORMAT_STAND_PCM_SHORT,
+     .intr_alloc_flags = 0, // default interrupt priority
+     .dma_buf_count = 8,
+     .dma_buf_len = 64,
+     .use_apll = false,
+     .tx_desc_auto_clear = false,
+     .fixed_mclk = 0
 	};
 	static i2s_pin_config_t pin_config = {
-	    .bck_io_num = bit_clock_pin,
-	    .ws_io_num = word_select_pin,
-	    .data_out_num = I2S_PIN_NO_CHANGE,
-	    .data_in_num = data_in_pin
+	   .bck_io_num = bit_clock_pin,
+	   .ws_io_num = word_select_pin,
+	   .data_out_num = I2S_PIN_NO_CHANGE,
+	   .data_in_num = data_in_pin
 	};
 	if (ESP_OK != i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, 0, NULL)){
-		return 0;
+	  return 0; // ERR
 	}
 
 	if (ESP_OK != i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, &pin_config)){
-    return 0;
+    return 0; // ERR
   }
 
-#else
+
+#else // if defined ESP_PLATFORM
   int AudioInI2SClass::begin(long sampleRate, int bitsPerSample)
   {
     if (!I2S.begin(I2S_PHILIPS_MODE, sampleRate, bitsPerSample)) {
-      return 0;
+      return 0; // ERR
     }
 #endif // ifdef ESP_PLATFORM
 
@@ -93,8 +98,8 @@ AudioInI2SClass::~AudioInI2SClass()
   #endif // #ifndef ESP_PLATFORM
 
    _channels = 2;
-   _initialized = true;
-  return 1;
+  _initialized = true;
+  return 1; // OK
 }
 
 #if defined ESP_PLATFORM
@@ -173,10 +178,13 @@ void AudioInI2SClass::end()
   _bitsPerSample = -1;
   _callbackTriggered = true;
   #ifdef ESP_PLATFORM
-    if(_use_adc){
-      i2s_adc_disable((i2s_port_t) _esp32_i2s_port_number);
+    if(_initialized){
+      if(_use_adc){
+        i2s_adc_disable((i2s_port_t) _esp32_i2s_port_number);
+      }
+      i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number);
+      _initialized = false;
     }
-    i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number);
   #else
     I2S.end();
   #endif

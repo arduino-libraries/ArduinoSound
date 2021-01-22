@@ -35,9 +35,13 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
   int bitsPerSample = input.bitsPerSample();
   int channels = input.channels();
 
-  if (bitsPerSample != 8 && bitsPerSample != 16 && bitsPerSample != 32) {
-    return 0;
-  }
+  #if defined ESP_PLATFORM
+    if (bitsPerSample != 8 && bitsPerSample != 16 && bitsPerSample != 24 && bitsPerSample != 32) {
+  #else
+    if (bitsPerSample != 8 && bitsPerSample != 16 && bitsPerSample != 32) {
+  #endif
+      return 0;
+    }
 
   if (channels != 1 && channels != 2) {
     return 0;
@@ -57,7 +61,6 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
       i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
       _initialized = false;
     }
-    bool use_dac = false;
     i2s_bits_per_sample_t bits;
       if(bitsPerSample <=8)                         bits = I2S_BITS_PER_SAMPLE_8BIT;
       if(bitsPerSample > 8  && bitsPerSample <= 16) bits = I2S_BITS_PER_SAMPLE_16BIT;
@@ -69,11 +72,11 @@ int AudioOutI2SClass::canPlay(AudioIn& input)
       .sample_rate = sampleRate, // default 44100
       .bits_per_sample = bits, // default 16
       .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-      .communication_format = I2S_COMM_FORMAT_STAND_MAX,
+      .communication_format = I2S_COMM_FORMAT_STAND_PCM_SHORT,
       .intr_alloc_flags = 0, // default interrupt priority
       .dma_buf_count = 8,
-      .dma_buf_len = 64
-      //.use_apll = false
+      .dma_buf_len = 64,
+      .use_apll = false 
     };
     static i2s_pin_config_t pin_config = {
       .bck_io_num = bit_clock_pin,
@@ -186,7 +189,9 @@ int AudioOutI2SClass::resume()
 int AudioOutI2SClass::stop()
 {
   #if defined ESP_PLATFORM
-    i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
+    if(_initialized){
+      i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
+    }
   #endif
 
   if (!_input) {
