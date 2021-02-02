@@ -338,7 +338,7 @@ int SDWaveFile::initWrite(int bitsPerSample, long sampleRate){
 
 int SDWaveFile::writeData(void* data, size_t bytesToWrite, bool finished){
   uint32_t written = 0;
-  written = _file.write((uint8_t *)data,bytesToWrite);
+  written = _file.write((uint8_t *)data, bytesToWrite);
   _dataSize += written;
   if(bytesToWrite != written){
     return 0; // ERR
@@ -377,8 +377,19 @@ int SDWaveFile::finishWavWrite(uint32_t numOfBytes){
   _file.close();
 
   // Only one file can be opened - create buffer for transfer
-  int buffer_bytes = 1024;
-  uint8_t buffer[buffer_bytes];
+  uint8_t *buffer;
+  uint buffer_bytes = 40960; // 40kB is most optimal for SD write
+  do{
+    buffer = (uint8_t*) malloc(buffer_bytes * sizeof(uint8_t));
+    if(buffer == NULL){
+      buffer_bytes /= 2;
+      if(buffer_bytes <= 256){
+        //Serial.println("ERROR: Unable to allocate buffer for final SD write.");
+        return 0;
+      } // trying too small buffer
+    } // malloc failed
+  }while(buffer == NULL);
+
   uint32_t bytesMoved = 0; // At the end this should be equal to numOfBytes
   uint32_t read, written; // How many Bytes were actually read and written
   uint32_t offset = 0; // Offset for reading tmp file
@@ -397,6 +408,7 @@ int SDWaveFile::finishWavWrite(uint32_t numOfBytes){
     _file.close();
     if(read != written){
       SD.remove(_tmp_filename); // remove tmp file
+      free(buffer);
       return 0; // ERROR
     }
     bytesMoved += written;
@@ -404,6 +416,7 @@ int SDWaveFile::finishWavWrite(uint32_t numOfBytes){
   }while(bytesMoved < numOfBytes);
 
   SD.remove(_tmp_filename); // remove tmp file
+  free(buffer);
   return 1; // OK
 }
 
