@@ -59,7 +59,7 @@ FFTAnalyzer::~FFTAnalyzer()
 int FFTAnalyzer::available()
 {
   #ifdef ESP_PLATFORM
-    int bytes_read = _input->read(_data_buffer, _length);
+    _input->read(_data_buffer, _length);
   #endif
 
   return _available;
@@ -248,31 +248,39 @@ void FFTAnalyzer::update(const void* buffer, size_t size)
   } else {
       memcpy(newSamples, buffer, size);
   }
-
   #ifdef ESP_PLATFORM
     if (_bitsPerSample == 16){
-      int16_t real_buffer[_length*2];
+      int16_t *real_buffer;
+      real_buffer = (int16_t*)calloc(_length*2,sizeof(int16_t));
+      if(real_buffer == NULL){
+        return; // unfortunatelly original method is void
+      }
       real_int16_to_complex_int16((int16_t*)_sampleBuffer, _length, real_buffer);
-
       #if defined ESP32
         dsps_fft2r_sc16_ae32(real_buffer, _length); // FFT using 16-bit fixed point optimized for ESP32
       #elif defined ESP32S2
         dsps_fft2r_sc16_ansi(real_buffer, _length); // FFT using 16-bit fixed point
       #endif
-      dsps_bit_rev_sc16_ansi(real_buffer, _length); // because ... ?
+      dsps_bit_rev_sc16_ansi(real_buffer, _length);
       int16_cmplx_mag(real_buffer, (float*)_spectrumBuffer, _length);
+      free(real_buffer);
     } else { // assuming 32 bit input
+      float *real_buffer;
+      real_buffer = (float*)calloc(_length*2,sizeof(float));
+      if(real_buffer == NULL){
+        return; // unfortunatelly original method is void
+      }
 
-      float real_buffer[_length*2] = {0.0};
       real_uint32_to_complex_float((uint32_t*)_sampleBuffer, _length, real_buffer);
       #if defined ESP32
         dsps_fft2r_fc32_ae32(real_buffer, _length); // FFT using 32-bit floating point optimized for ESP32
       #elif defined ESP32S2
         dsps_fft2r_fc32_ansi(real_buffer, _length); // FFT using 32-bit floating point
       #endif
-      dsps_bit_rev_fc32_ansi(real_buffer, _length); // because ... ?
+      dsps_bit_rev_fc32_ansi(real_buffer, _length);
 
       float_cmplx_mag(real_buffer, (float*)_spectrumBuffer, _length);
+      free(real_buffer);
     }
   #else
     if (_bitsPerSample == 16) {

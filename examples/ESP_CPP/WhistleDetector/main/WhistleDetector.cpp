@@ -69,7 +69,7 @@ void setup() {
   pinMode(ledPin, OUTPUT);
 
   bool use_external_mic = false;
-  if (!codec_chip->beginIn(sampleRate, bitsPerSample, use_external_mic)){
+  if (!codec_chip->inBegin(sampleRate, bitsPerSample, use_external_mic)){
     Serial.println("Failed to initialize I2S input!");
     while (1); // do nothing
   }
@@ -95,17 +95,10 @@ void loop() {
     // map the value of the whistle bin magnitude between 0 and 255
     int ledValue;
     if (bitsPerSample == 16){
-      ledValue = (int)float_map(spectrum[whistleBin], 100.0, 1500.0, 0.0, 255.0);
+      ledValue = (int)float_map(spectrum[whistleBin], 250.0, 2500.0, 0.0, 255.0);
     }else{
       ledValue = (int)float_map(spectrum[whistleBin], 30000000000.0, 180000000000.0, 0.0, 255.0);
     }
-    Serial.print("spectrum["); Serial.print(whistleBin); Serial.print("]="); Serial.println(spectrum[whistleBin]);
-
-    Serial.println("spectrum =");
-    for(int i = 0; i < spectrumSize; ++i){
-      Serial.print(spectrum[i]); Serial.print(" ");
-    }
-    Serial.println("");
 
     // cap the values
     if (ledValue < 0) {
@@ -117,7 +110,7 @@ void loop() {
     // set LED brightness based on whistle bin magnitude
 #ifdef ESP_PLATFORM
     //ledcWrite(ledPin, ledValue); //GPIO_NUM_22 does not have PWM/analog output
-    digitalWrite(ledPin, ledValue > 8 ? HIGH : LOW);
+    digitalWrite(ledPin, ledValue > 128 ? HIGH : LOW);
 #else
     analogWrite(ledPin, ledValue);
 #endif
