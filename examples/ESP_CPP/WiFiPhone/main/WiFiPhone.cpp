@@ -1,11 +1,4 @@
 /*
-TODO po prazdninach - data samotny sou ok -teda aspon tak vypadaj.
-problem je ale v rychlosti, laggovani atd - je velky zpozdeni a cely to zni trhane
-zacal sem pridavat implementaci z udp verze ktera pouziva fronty a strukturu pro data
-*/
-
-
-/*
  * WiFi Phone / intercomm / baby monitor
  * This example demonstrates simultaneous use of input and output.
  *
@@ -22,11 +15,10 @@ zacal sem pridavat implementaci z udp verze ktera pouziva fronty a strukturu pro
  *
  */
 
-#define I_AM_RX
-#define I_AM_TX
+#define I_AM_RX // comment this if you want only to transmit
+#define I_AM_TX // comment this if you want only to receive
 
-#define BOARD_NUMBER 1
-#define USE_EXTERNAL_MIC false
+#define USE_EXTERNAL_MIC false  // false = use LyraT onboard microphones; true = use AUX_IN
 
 #include <esp_now.h>
 #include <esp_wifi.h>
@@ -59,12 +51,12 @@ typedef struct buffer {
 uint8_t audio_buffer[buffer_size];
 
 std::queue<buffer_t> q_wifi_in;
+std::queue<buffer_t> q_wifi_out;
 
 void InitESPNow();
 void ScanForSlave();
 void manageSlave();
 esp_err_t sendData(uint8_t *data, size_t len);
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status);
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len);
 void configDeviceAP();
 
@@ -99,7 +91,7 @@ void setup() {
   InitESPNow();
   // Once ESPNow is successfully Init, we will register callbacks
   // get the status of Sent packet
-  esp_now_register_send_cb(OnDataSent);
+  //esp_now_register_send_cb(OnDataSent);
   // get the status of Trasnmitted packet
   esp_now_register_recv_cb(OnDataRecv);
   // Scan for slave
@@ -140,6 +132,7 @@ while(true){ // main loop
 
 // TX loop
 void loop(){
+  buffer_t buf;
   // If Slave is found, it would be populate in `slave` variable
   // We will check if `slave` is defined and then we proceed further
   if (SlaveCnt > 0) { // check if slave channel is defined
@@ -149,11 +142,11 @@ void loop(){
     // pair success or already paired
     // Send data to device
     #ifdef I_AM_TX
-      codec_chip->read(audio_buffer, buffer_bytes);
+      buf.size = codec_chip->read(buf.data, buffer_bytes);
+      q_wifi_out.push(buf);
 
-      if(ESP_OK != sendData(audio_buffer, buffer_bytes)){
-        // No slave found to process
-        ScanForSlave();
+      if(ESP_OK == sendData(q_wifi_out.front().data, q_wifi_out.front().size)){
+        q_wifi_out.pop();
       }
     #endif // I_AM_TX
   }else{
@@ -219,7 +212,6 @@ void ScanForSlave() {
   // clean up ram
   WiFi.scanDelete();
 }
-
 void manageSlave() {
   if (SlaveCnt > 0) {
     for (int i = 0; i < SlaveCnt; i++) {
@@ -232,26 +224,16 @@ void manageSlave() {
         esp_err_t addStatus = esp_now_add_peer(peer);
         if (addStatus == ESP_OK) {
           // Pair success
-          //Serial.println("Pair success");
         } else if (addStatus == ESP_ERR_ESPNOW_NOT_INIT) {
           // How did we get so far!!
-          //Serial.println("ESPNOW Not Init");
         } else if (addStatus == ESP_ERR_ESPNOW_ARG) {
-          //Serial.println("Add Peer - Invalid Argument");
         } else if (addStatus == ESP_ERR_ESPNOW_FULL) {
-          //Serial.println("Peer list full");
         } else if (addStatus == ESP_ERR_ESPNOW_NO_MEM) {
-          //Serial.println("Out of memory");
         } else if (addStatus == ESP_ERR_ESPNOW_EXIST) {
-          //Serial.println("Peer Exists");
         } else {
-          //Serial.println("Not sure what happened");
         }
       }
     }
-  } else {
-    // No slave found to process
-    //Serial.println("No Slave found to process");
   }
 }
 
@@ -262,30 +244,19 @@ esp_err_t sendData(uint8_t *data, size_t len) {
 
     result = esp_now_send(peer_addr, data, len);
 
-    //Serial.print("Send Status: ");
     if (result == ESP_OK) {
-      //Serial.println("Success");
     } else if (result == ESP_ERR_ESPNOW_NOT_INIT) {
       // How did we get so far!!
-      //Serial.println("ESPNOW not Init.");
     } else if (result == ESP_ERR_ESPNOW_ARG) {
-      //Serial.println("Invalid Argument");
     } else if (result == ESP_ERR_ESPNOW_INTERNAL) {
-      //Serial.println("Internal Error");
     } else if (result == ESP_ERR_ESPNOW_NO_MEM) {
-      //Serial.println("ESP_ERR_ESPNOW_NO_MEM");
     } else if (result == ESP_ERR_ESPNOW_NOT_FOUND) {
-      //Serial.println("Peer not found.");
     } else {
-      //Serial.println("Not sure what happened");
     }
   }
   return result;
 }
 
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  // NOP
-}
 void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
   #ifdef I_AM_RX
     buffer_t buf;
