@@ -130,7 +130,7 @@ void AudioOut::adjustVolume(void* buffer, size_t size, int bitsPerSample)
     int32_t* s = (int32_t*)buffer;
 
     for (int i = 0; i < samples; i++) {
-      *s = (*s * _volume) >> 10;
+      *s = ((int64_t)*s * _volume) >> 10;
 
       s++;
     }
