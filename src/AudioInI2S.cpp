@@ -54,25 +54,23 @@ AudioInI2SClass::~AudioInI2SClass()
       .sample_rate =  sampleRate, // default 44100,
       .bits_per_sample = (i2s_bits_per_sample_t) bitsPerSample, // default 16,
       .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
-      //.communication_format = I2S_COMM_FORMAT_STAND_PCM_SHORT, // working but noisy at higher bps
       .communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_I2S | I2S_COMM_FORMAT_STAND_PCM_SHORT),
-      //.communication_format = (i2s_comm_format_t)(I2S_COMM_FORMAT_STAND_I2S | I2S_COMM_FORMAT_STAND_PCM_LONG),
      .intr_alloc_flags = 0, // default interrupt priority
      .dma_buf_count = 8,
      .dma_buf_len = 64,
      .use_apll = false
-	};
-	i2s_pin_config_t pin_config = {
-	   .bck_io_num = bit_clock_pin,
-	   .ws_io_num = word_select_pin,
-	   .data_out_num = I2S_PIN_NO_CHANGE,
-	   .data_in_num = data_in_pin
-	};
-	if (ESP_OK != i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, 0, NULL)){
-	  return 0; // ERR
-	}
+    };
+    i2s_pin_config_t pin_config = {
+       .bck_io_num = bit_clock_pin,
+       .ws_io_num = word_select_pin,
+       .data_out_num = I2S_PIN_NO_CHANGE,
+       .data_in_num = data_in_pin
+    };
+    if (ESP_OK != i2s_driver_install((i2s_port_t) _esp32_i2s_port_number, &i2s_config, 0, NULL)){
+      return 0; // ERR
+    }
 
-	if (ESP_OK != i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, &pin_config)){
+    if (ESP_OK != i2s_set_pin((i2s_port_t) _esp32_i2s_port_number, &pin_config)){
     return 0; // ERR
   }
 
@@ -99,7 +97,7 @@ AudioInI2SClass::~AudioInI2SClass()
    _channels = 2;
   _initialized = true;
   return 1; // OK
-}
+} // AudioInI2SClass::begin
 
 #if defined ESP_PLATFORM
   #if defined ESP32

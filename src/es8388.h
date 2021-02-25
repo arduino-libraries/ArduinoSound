@@ -117,6 +117,8 @@ private:
   int _codec_data_in_pin;
   int _codec_data_out_pin;
   TwoWire _wire;
+  bool _codec_initialized;
+  int _esp32_i2s_port_number;
 public:
 /**
  * @brief Constructor of ES8388 codech chip class

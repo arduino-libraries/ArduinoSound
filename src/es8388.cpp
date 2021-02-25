@@ -40,7 +40,9 @@ ES8388::ES8388(int PA_ENABLE_GPIO, TwoWire wire, int bit_clock_pin, int word_sel
   _word_select_pin(word_select_pin),
   _codec_data_in_pin(codec_data_in_pin),
   _codec_data_out_pin(codec_data_out_pin),
-  _wire(wire)
+  _wire(wire),
+  _codec_initialized(false),
+  _esp32_i2s_port_number(-1)
 {
   // Enable MCLK on GPIO 0
   PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0_CLK_OUT1);
@@ -61,6 +63,8 @@ ES8388::~ES8388()
     int ES8388::inBegin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/, bool use_external_mic/*=false*/)
   #endif
 {
+  if(_codec_initialized){ end(); }
+
   #ifdef CONFIG_IDF_TARGET_ESP32
     if(!AudioInI2SClass::begin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_out_pin, esp32_i2s_port_number)){
   #elif CONFIG_IDF_TARGET_ESP32S2
@@ -79,6 +83,7 @@ ES8388::~ES8388()
     if(sampleRate > 44100) samples = AUDIO_HAL_48K_SAMPLES;   /*!< set to 48k samples per second */
 
   audio_hal_iface_bits_t bits;        /*!< i2s interface number of bits per sample */
+    if(bitsPerSample < 16) { return 0; } // ERR - ES8388 does not support less than 16 bits per sample
     if(bitsPerSample <=16) bits = AUDIO_HAL_BIT_LENGTH_16BITS;
     if(bitsPerSample > 16 && bitsPerSample <= 24) bits = AUDIO_HAL_BIT_LENGTH_24BITS;
     if(bitsPerSample > 24) bits = AUDIO_HAL_BIT_LENGTH_32BITS;
@@ -107,6 +112,7 @@ ES8388::~ES8388()
   if (ESP_OK != es8388_start(ES_MODULE_ADC)){ // Start ES8388 codec chip in A/D converter mode
     return 0; // ERR
   }
+  _codec_initialized = true;
   return 1; // OK
 }
 
@@ -118,6 +124,7 @@ ES8388::~ES8388()
      int ES8388::outBegin(long sampleRate/*=44100*/, int bitsPerSample/*=16*/)
   #endif
 {
+  if(_codec_initialized){ end(); }
   int ret;
   #ifdef CONFIG_IDF_TARGET_ESP32
     ret = AudioOutI2SClass::outBegin(sampleRate, bitsPerSample, _bit_clock_pin, _word_select_pin, _codec_data_in_pin, esp32_i2s_port_number);
@@ -140,13 +147,14 @@ ES8388::~ES8388()
       if(sampleRate > 44100) samples = AUDIO_HAL_48K_SAMPLES;   /*!< set to 48k samples per second */
 
     audio_hal_iface_bits_t bits;        /*!< i2s interface number of bits per sample */
+      if(bitsPerSample < 16) { return 0; } // ERR - ES8388 does not support less than 16 bits per sample
       if(bitsPerSample <=16) bits = AUDIO_HAL_BIT_LENGTH_16BITS;
       if(bitsPerSample > 16 && bitsPerSample <= 24) bits = AUDIO_HAL_BIT_LENGTH_24BITS;
       if(bitsPerSample > 24) bits = AUDIO_HAL_BIT_LENGTH_32BITS;
 
     audio_hal_codec_i2s_iface_t i2s_iface = {
       .mode = AUDIO_HAL_MODE_SLAVE, /*!< set slave mode */
-      .fmt = AUDIO_HAL_I2S_DSP, /*!< set dsp/pcm format */
+      .fmt = AUDIO_HAL_I2S_NORMAL,  /*!< set normal I2S format */
       .samples = samples,
       .bits = bits};
 
@@ -165,6 +173,7 @@ ES8388::~ES8388()
     if (ESP_OK != es8388_start(ES_MODULE_DAC)){ // Start ES8388 codec chip in D/A converter mode
       return 0; // ERR
     }
+    _codec_initialized = true;
     return 1; // OK
 }
 
@@ -175,18 +184,39 @@ ES8388::~ES8388()
   #elif CONFIG_IDF_TARGET_ESP32S2
     int ES8388::begin(long sampleRate, int bitsPerSample, bool use_external_mic){
   #endif
+  if(_codec_initialized){ end(); }
+  _esp32_i2s_port_number = esp32_i2s_port_number;
 
   // init ESP I2S for both INput and OUTput
   if(AudioOutI2SClass::_initialized || AudioInI2SClass::_initialized){
     i2s_driver_uninstall((i2s_port_t) esp32_i2s_port_number); //stop & destroy i2s driver
   }
+
+  // Perform bits-per-sample check
+  audio_hal_iface_bits_t codec_bits;        /*!< i2s interface number of bits per sample */
+  if(bitsPerSample < 16) { return 0; } // ERR - ES8388 does not support less than 16 bits per sample
+  if(bitsPerSample <=16) codec_bits = AUDIO_HAL_BIT_LENGTH_16BITS;
+  if(bitsPerSample > 16 && bitsPerSample <= 24) codec_bits = AUDIO_HAL_BIT_LENGTH_24BITS;
+  if(bitsPerSample > 24) codec_bits = AUDIO_HAL_BIT_LENGTH_32BITS;
+
+  //////////////////////////
+  // ESP32 I2S setup
+  //////////////////////////
+
   AudioInI2SClass::_use_adc = false;
   AudioIn::_esp32_i2s_port_number = esp32_i2s_port_number;
   AudioOut::_esp32_i2s_port_number = esp32_i2s_port_number;
-  static i2s_config_t i2s_config = {
+
+  i2s_bits_per_sample_t i2s_bits;
+    if(bitsPerSample <=8)                         i2s_bits = I2S_BITS_PER_SAMPLE_8BIT;
+    if(bitsPerSample > 8  && bitsPerSample <= 16) i2s_bits = I2S_BITS_PER_SAMPLE_16BIT;
+    if(bitsPerSample > 16 && bitsPerSample <= 24) i2s_bits = I2S_BITS_PER_SAMPLE_24BIT;
+    if(bitsPerSample > 24)                        i2s_bits = I2S_BITS_PER_SAMPLE_32BIT;
+
+  i2s_config_t i2s_config = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_TX),
-    .sample_rate =  sampleRate, // default 44100,
-    .bits_per_sample = (i2s_bits_per_sample_t) bitsPerSample, // default 16,
+    .sample_rate =  sampleRate,
+    .bits_per_sample = i2s_bits,
     .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
     .communication_format = (i2s_comm_format_t) I2S_COMM_FORMAT_STAND_PCM_SHORT,
     .intr_alloc_flags = 0, // default interrupt priority
@@ -197,7 +227,7 @@ ES8388::~ES8388()
     .fixed_mclk = 0
   };
 
-  static i2s_pin_config_t pin_config = {
+  i2s_pin_config_t pin_config = {
       .bck_io_num = _bit_clock_pin,
       .ws_io_num = _word_select_pin,
       .data_out_num = _codec_data_in_pin,
@@ -212,7 +242,10 @@ ES8388::~ES8388()
     return 0;
   }
 
+  ////////////////////////////
   // codec chip setup
+  ////////////////////////////
+
   audio_hal_iface_samples_t samples;  /*!< I2S interface samples per second */
   if(sampleRate <= 8000) samples = AUDIO_HAL_08K_SAMPLES;   /*!< set to  8k samples per second */
   if(sampleRate > 8000 && sampleRate <= 11025) samples = AUDIO_HAL_11K_SAMPLES;   /*!< set to 11.025k samples per second */
@@ -223,16 +256,12 @@ ES8388::~ES8388()
   if(sampleRate > 32000 && sampleRate <= 44100) samples = AUDIO_HAL_44K_SAMPLES;   /*!< set to 44.1k samples per second */
   if(sampleRate > 44100) samples = AUDIO_HAL_48K_SAMPLES;   /*!< set to 48k samples per second */
 
-  audio_hal_iface_bits_t bits;        /*!< i2s interface number of bits per sample */
-  if(bitsPerSample <=16) bits = AUDIO_HAL_BIT_LENGTH_16BITS;
-  if(bitsPerSample > 16 && bitsPerSample <= 24) bits = AUDIO_HAL_BIT_LENGTH_24BITS;
-  if(bitsPerSample > 24) bits = AUDIO_HAL_BIT_LENGTH_32BITS;
-
   audio_hal_codec_i2s_iface_t i2s_iface = {
     .mode = AUDIO_HAL_MODE_SLAVE, /*!< set slave mode */
-    .fmt = AUDIO_HAL_I2S_DSP, /*!< set dsp/pcm format */
+    //.fmt = AUDIO_HAL_I2S_DSP, /*!< set dsp/pcm format */
+    .fmt = AUDIO_HAL_I2S_NORMAL, // sounds ok
     .samples = samples,
-    .bits = bits
+    .bits = codec_bits
   };
 
   if(use_external_mic){
@@ -257,16 +286,24 @@ ES8388::~ES8388()
   }
   AudioOutI2SClass::_initialized = true;
   AudioInI2SClass::_initialized = true;
+  _codec_initialized = true;
   return 1; // OK
 }
-#endif // ESP_PLATFORM - wrapping all 3 initializer
+#endif // ESP_PLATFORM - wrapping all 3 initializers
 
 void ES8388::end()
 {
-  AudioInI2SClass::end();
-  AudioOutI2SClass::stop();
-  es8388_stop(ES_MODULE_ADC); // Stop ES8388 codec chip
-  es8388_pa_power(false); // Disable power to codec chip
+  if(_codec_initialized){
+    AudioInI2SClass::end();
+    AudioOutI2SClass::stop();
+    if(_esp32_i2s_port_number >=0){
+      i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number);
+      _esp32_i2s_port_number = -1;
+    }
+    es8388_stop(ES_MODULE_ADC); // Stop ES8388 codec chip
+    es8388_pa_power(false); // Disable power to codec chip
+    _codec_initialized = false;
+  }
 }
 
 /* original functions */
@@ -528,8 +565,8 @@ esp_err_t ES8388::es8388_init(audio_hal_codec_config_t *cfg)
     res |= es_write_reg(ES8388_ADDR, ES8388_DACPOWER, 0xC0);  //disable DAC and disable Lout/Rout/1/2
     res |= es_write_reg(ES8388_ADDR, ES8388_CONTROL1, 0x12);  //Enfr=0,Play&Record Mode,(0x17-both of mic&paly)
 //    res |= es_write_reg(ES8388_ADDR, ES8388_CONTROL2, 0);  //LPVrefBuf=0,Pdn_ana=0
-    res |= es_write_reg(ES8388_ADDR, ES8388_DACCONTROL1, 0x18);//1a 0x18:16bit iis , 0x00:24
-    res |= es_write_reg(ES8388_ADDR, ES8388_DACCONTROL2, 0x02);  //DACFsMode,SINGLE SPEED; DACFsRatio,256
+    res |= es_write_reg(ES8388_ADDR, ES8388_DACCONTROL1, 0x18);  // 0x18>>3 == 0x3 == 16bit sample
+    res |= es_write_reg(ES8388_ADDR, ES8388_DACCONTROL2, 0x02);  // DACFsMode,SINGLE SPEED; DACFsRatio,256
     res |= es_write_reg(ES8388_ADDR, ES8388_DACCONTROL16, 0x00); // 0x00 audio on LIN1&RIN1,  0x09 LIN2&RIN2
     res |= es_write_reg(ES8388_ADDR, ES8388_DACCONTROL17, 0x90); // only left DAC to left mixer enable 0db
     res |= es_write_reg(ES8388_ADDR, ES8388_DACCONTROL20, 0x90); // only right DAC to right mixer enable 0db

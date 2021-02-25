@@ -409,6 +409,7 @@ int SDWaveFile::finishWavWrite(uint32_t numOfBytes){
     if(read != written){
       SD.remove(_tmp_filename); // remove tmp file
       free(buffer);
+      //Serial.println("Finish write ERROR mismatch read / write");
       return 0; // ERROR
     }
     bytesMoved += written;
