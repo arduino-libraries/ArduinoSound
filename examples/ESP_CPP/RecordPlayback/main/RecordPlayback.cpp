@@ -118,6 +118,7 @@ void Core0TaskCode( void * parameter){
       }
     } // queue not empty
   } // main execution loop while(! exit)
+  free(SD_buffer_size);
   vTaskDelete(NULL);
 } //Core0TaskCode
 
@@ -128,6 +129,7 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
   bool ret = false;
   if(!codec_chip->inBegin(sampleRate, bitsPerSample, use_external_mic)){ // Config codec for input
     Serial.println("ERROR: Could not initialize codec chip for input");
+    vEventGroupDelete(xEventBits);
     return 0; // ERR
   }
   waveFile = SDWaveFile(filename);
@@ -137,27 +139,38 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
   if(!ret){
     Serial.println("ERROR: Could not initialize tmp file");
     codec_chip->end();
+    vEventGroupDelete(xEventBits);
     return 0; // ERR
   }
 
-  xTaskCreatePinnedToCore(
+  if(pdPASS != xTaskCreatePinnedToCore(
     Core0TaskCode, /* Function to implement the task */
     "Core0Task", /* Name of the task */
     10000,  /* Stack size in words */
     (void*)(&waveFile),  /* Task input parameter */
     0,  /* Priority of the task */
     &Core0Task,  /* Task handle. */
-    0); /* Core where the task should run */
+    0)){ /* Core where the task should run */
+    Serial.println("ERROR: Failed to create SD write task.");
+    codec_chip->end();
+    return 0; // ERR
+  }
 
   uxReturn = xEventGroupWaitBits(xEventBits,
                                  SD_TASK_RDY_BIT_0, // wait untill SD task redy to receive
                                  pdFALSE, // Don't clear received bits
                                  pdFALSE, // logacl OR for waiting bits
                                  portMAX_DELAY ); // Wait indefintely
-  if((uxReturn & SD_TASK_RDY_BIT_0) != SD_TASK_RDY_BIT_0){
+ if((uxReturn & SD_TASK_RDY_BIT_0) == SD_TASK_ERROR_BIT_2){
+    Serial.println("ERROR: SD write task reports failed write buffer alloc");
+    Serial.print("flags = 0x"); Serial.println(xEventGroupGetBits(xEventBits),HEX);
+    codec_chip->end();
+    return 0; // ERR
+  }else if((uxReturn & SD_TASK_RDY_BIT_0) != SD_TASK_RDY_BIT_0){
     Serial.println("ERROR: I2S Task reached point that should not happend - waiting untill sd rdy, but after wait flag not set");
     Serial.print("flags = 0x"); Serial.println(xEventGroupGetBits(xEventBits),HEX);
     codec_chip->end();
+    vEventGroupDelete(xEventBits);
     return 0; // ERR
   }
   Serial.print("Recording started (");Serial.print(duration);Serial.println("s)");
@@ -171,6 +184,7 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
     if((xEventGroupGetBits(xEventBits) & SD_TASK_ERROR_BIT_2 ) == SD_TASK_ERROR_BIT_2){
       Serial.println("SD task encountered error - exit main function");
       codec_chip->end();
+      vEventGroupDelete(xEventBits);
       return 0; // ERR
     }
 
@@ -188,6 +202,7 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
       if(pdPASS != xQueueSendToBack(i2s_data_queue, &buf, 100)){
         Serial.println("ERROR: sending I2S data to queue");
         codec_chip->end();
+        vEventGroupDelete(xEventBits);
         return 0; // ERR
       }
     }
@@ -204,9 +219,15 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
                                  pdFALSE, // Don't clear received bits
                                  pdFALSE, // logacl OR for waiting bits
                                  portMAX_DELAY); // Wait indefintely
-  if( ( uxReturn & SD_TASK_SAVED_BIT_1 ) != SD_TASK_SAVED_BIT_1 ){
+ if((uxReturn & SD_TASK_RDY_BIT_0) == SD_TASK_ERROR_BIT_2){
+    Serial.println("ERROR: SD write task reports Error while writting");
+    Serial.print("flags = 0x"); Serial.println(xEventGroupGetBits(xEventBits),HEX);
+    vEventGroupDelete(xEventBits);
+    return 0; // ERR
+  }else if( ( uxReturn & SD_TASK_SAVED_BIT_1 ) != SD_TASK_SAVED_BIT_1 ){
     Serial.println("ERROR: I2S Task reached point that should not happend - waiting untill sd finished, but after flag was not set");
     Serial.print("flags = 0x"); Serial.println(xEventGroupGetBits(xEventBits),HEX);
+    vEventGroupDelete(xEventBits);
     return 0; // ERR
   }
   vEventGroupDelete(xEventBits);
