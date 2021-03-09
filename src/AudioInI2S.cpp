@@ -44,8 +44,10 @@ AudioInI2SClass::~AudioInI2SClass()
       i2s_driver_uninstall((i2s_port_t) _esp32_i2s_port_number); //stop & destroy i2s driver
       _initialized = false;
     }
-    if(bitsPerSample % 8 != 0 || bitsPerSample > 32 || bitsPerSample < 16){
-      return 0; // ERR
+    if((i2s_bits_per_sample_t) bitsPerSample != I2S_BITS_PER_SAMPLE_16BIT &&
+       (i2s_bits_per_sample_t) bitsPerSample != I2S_BITS_PER_SAMPLE_24BIT &&
+       (i2s_bits_per_sample_t) bitsPerSample != I2S_BITS_PER_SAMPLE_32BIT){
+       return 0; // ERR
     }
 
     _use_adc = false;
@@ -119,7 +121,7 @@ AudioInI2SClass::~AudioInI2SClass()
     int dma_buf_count = 4;
     i2s_config_t i2s_config = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX | I2S_MODE_ADC_BUILT_IN),
-    .sample_rate =  sampleRate, // default 44100,
+    .sample_rate = sampleRate,
     .bits_per_sample = I2S_BITS_PER_SAMPLE_16BIT,
     .channel_format = I2S_CHANNEL_FMT_ONLY_LEFT,
     .communication_format = I2S_COMM_FORMAT_STAND_MSB,

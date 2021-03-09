@@ -13,6 +13,9 @@
  *  - If you intend to use external microphone set USE_EXTERNAL_MIC true;
  *    # If you don't have any external microphone simply leave USE_EXTERNAL_MIC false
  *
+ * Note:
+ *   Do not change bitrate nor sample rate as it will result in noisy, laggy and distorted unusable audio.
+ *
  */
 
 #define I_AM_RX // comment this if you want only to transmit
@@ -52,6 +55,7 @@ uint8_t audio_buffer[buffer_size];
 
 std::queue<buffer_t> q_wifi_in;
 std::queue<buffer_t> q_wifi_out;
+#define QUEUE_MAX 512 // prevent queue overflow
 
 void InitESPNow();
 void ScanForSlave();
@@ -143,7 +147,9 @@ void loop(){
     // Send data to device
     #ifdef I_AM_TX
       buf.size = codec_chip->read(buf.data, buffer_bytes);
-      q_wifi_out.push(buf);
+      if(q_wifi_out.size() <= QUEUE_MAX){
+        q_wifi_out.push(buf);
+      }
 
       if(ESP_OK == sendData(q_wifi_out.front().data, q_wifi_out.front().size)){
         q_wifi_out.pop();
@@ -262,7 +268,9 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *data, int data_len) {
     buffer_t buf;
     memcpy(buf.data, data, data_len);
     buf.size = data_len;
-    q_wifi_in.push(buf);
+    if(q_wifi_in.size() <= QUEUE_MAX){
+      q_wifi_in.push(buf);
+    }
   #endif
 }
 

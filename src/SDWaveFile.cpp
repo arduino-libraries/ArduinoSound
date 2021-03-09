@@ -341,6 +341,7 @@ int SDWaveFile::writeData(void* data, size_t bytesToWrite, bool finished){
   written = _file.write((uint8_t *)data, bytesToWrite);
   _dataSize += written;
   if(bytesToWrite != written){
+    //Serial.println("SD write data ERROR: bytesToWrite != written");
     return 0; // ERR
   }
   if(finished){ // write header and move data from tmp file
@@ -413,6 +414,7 @@ int SDWaveFile::finishWavWrite(uint32_t numOfBytes){
       return 0; // ERROR
     }
     bytesMoved += written;
+    //Serial.print("Written ");Serial.print(bytesMoved); Serial.print(" / ");Serial.println(numOfBytes);
     offset += read;
   }while(bytesMoved < numOfBytes);
 

@@ -74,8 +74,8 @@ QueueHandle_t i2s_data_queue = NULL; // queue holding I2S data
  * Based on function parameters then initializes I2S and codec chip.
  * After successfull init the function then records audio in given file.
  */
-uint SD_buffer_size = 40960; // 40kB is most optimal for SD write
 void Core0TaskCode( void * parameter){
+  uint SD_buffer_size = 40960; // 40kB is most optimal for SD write
   SDWaveFile *waveFile = (SDWaveFile*)parameter;
   uint8_t *SD_write_buffer;
   uint SD_buffer_pointer;
@@ -118,7 +118,7 @@ void Core0TaskCode( void * parameter){
       }
     } // queue not empty
   } // main execution loop while(! exit)
-  free(SD_buffer_size);
+  free(SD_write_buffer);
   vTaskDelete(NULL);
 } //Core0TaskCode
 
@@ -336,7 +336,7 @@ void setup() {
 void loop() {
   bool use_external_mic = false;
   int recordDuration = 5; // number of seconds to keep recording
-  if(!record_wav_file(test, recordDuration, 24, 44100, use_external_mic)){
+  if(!record_wav_file(test, recordDuration, 16, 44100, use_external_mic)){
     Serial.println("Record failed!");
   }else{ // Recording succeeded - proceed to playback
     if(!play_wav_file(test)){

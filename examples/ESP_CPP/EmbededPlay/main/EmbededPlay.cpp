@@ -55,9 +55,8 @@
 #ifdef USE_I2S_MODULE
   int bit_clock_pin = 32; // Main clock for the external I2S codec (sometimes called SCK or BCK)
   int word_select_pin = 33; // Signal for changind Left and Right channel (sometimes called WS or LCK)
-  int data_out_pin = 25; // Main signal with I2s data (sometimes called DIN, or SD)
+  int data_out_pin = 25; // Main signal with I2S data (sometimes called DIN, or SD)
 #endif
-
 
 // symbol names of file's start and end
 extern const uint8_t sound_file_wav_start[] asm("_binary_sound_file_wav_start");
@@ -71,19 +70,20 @@ struct SubChunkHeader {
 
 // based on: http://soundfile.sapp.org/doc/WaveFormat/
 struct WaveFileHeader {
-  uint32_t chunkId;
-  uint32_t chunkSize;
-  uint32_t format;
+  uint32_t chunkId;   // Offset 0
+  uint32_t chunkSize; // Offset 4
+  uint32_t format;    // Offset 8
   struct {
-    struct SubChunkHeader header;
-    uint16_t audioFormat;
-    uint16_t numChannels;
-    uint32_t sampleRate;
-    uint32_t byteRate;
-    uint16_t blockAlign;
-    uint16_t bitsPerSample;
+    struct SubChunkHeader header; // Offset 12 (size 8)
+    uint16_t audioFormat;   // Offset 20
+    uint16_t numChannels;   // Offset 22
+    uint32_t sampleRate;    // Offset 24
+    uint32_t byteRate;      // Offset 28
+    uint16_t blockAlign;    // Offset 32
+    uint16_t bitsPerSample; // Offset 34
   } subChunk1;
-  struct SubChunkHeader subChunk2Header;
+  struct SubChunkHeader subChunk2Header; // Offset 36 (size 8)
+  // Data offset 44 (size == subChunk2Header.size)
 } __attribute__((packed));
 
 // Function to check ebeded wav file
@@ -107,7 +107,7 @@ bool play_embedded_wav_file(const uint8_t *file_start, const uint8_t *file_end){
 
   if (!file_ok) {
     Serial.println("wave file is invalid!");
-    return false;
+    return 0; // ERR
   }
 
   // Print out wave file header
@@ -123,14 +123,17 @@ bool play_embedded_wav_file(const uint8_t *file_start, const uint8_t *file_end){
   Serial.print(sampleRate);
   Serial.println(" Hz");
   long bitsPerSample = header.subChunk1.bitsPerSample;
-  if(bitsPerSample == 8){ // I2S needs at least 16 bits we will reduce sample rate
-    bitsPerSample = 16;
-    sampleRate = sampleRate /2;
-  }
+
 #ifndef USE_I2S_MODULE
-  AudioOutI2S.beginDAC(sampleRate);
+  if(!AudioOutI2S.beginDAC(sampleRate)){
+    Serial.println("ERROR: Could not begin DAC AudioOutI2S");
+    return 0; // ERR
+  }
 #else
-  AudioOutI2S.outBegin(sampleRate, bitsPerSample, bit_clock_pin, word_select_pin, data_out_pin);
+  if(!AudioOutI2S.outBegin(sampleRate, bitsPerSample, bit_clock_pin, word_select_pin, data_out_pin)){
+    Serial.println("ERROR: Could not begin AudioOutI2S");
+    return 0; // ERR
+  }
 #endif
 
   // Adjust the playback volume
@@ -153,13 +156,11 @@ bool play_embedded_wav_file(const uint8_t *file_start, const uint8_t *file_end){
       return true;
     }else{
       if(n > ((uint32_t)file_end-(uint32_t)file_pointer)){ // last chunk
-        Serial.print("last chunk = "); Serial.println(n);
         n = (size_t)((uint32_t)file_end-(uint32_t)file_pointer);
-      }
-      memcpy(data, (void*)file_pointer, n);
-      i2s_write((i2s_port_t) AudioOutI2S.get_esp32_i2s_port_number(), data, n, &bytes_written, 100);
-
-      file_pointer += bytes_written;
+    }
+    memcpy(data, (void*)file_pointer, n);
+    i2s_write((i2s_port_t) AudioOutI2S.get_esp32_i2s_port_number(), data, n, &bytes_written, 100);
+    file_pointer += bytes_written;
     } // if not end of file
   } // playback loop
 } // play_wav_file()
@@ -187,7 +188,12 @@ void loop() {
       button_current_state = digitalRead(button_pin);
       if(button_previous_state == true && button_current_state == false){
         Serial.println("Button pressed - play");
-        play_embedded_wav_file(sound_file_wav_start, sound_file_wav_end);
+        if(!play_embedded_wav_file(sound_file_wav_start, sound_file_wav_end)){
+          Serial.println("Playback Failed");
+        }else{
+          Serial.println("Playback returned successfully");
+          Serial.println("Press button to play");
+        }
       }
       button_previous_state = button_current_state;
     } // infinite loop
