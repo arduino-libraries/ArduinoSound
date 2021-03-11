@@ -22,6 +22,8 @@
  *
  */
 
+#ifdef ESP_PLATFORM
+
 #include <string.h>
 #include "es8388.h"
 
@@ -56,7 +58,6 @@ ES8388::~ES8388()
 }
 
 /* Audio In */
-#ifdef ESP_PLATFORM
   #ifdef CONFIG_IDF_TARGET_ESP32
     int ES8388::inBegin(long sampleRate, int bitsPerSample, bool use_external_mic/*=false*/, int esp32_i2s_port_number/*=0*/)
   #elif CONFIG_IDF_TARGET_ESP32S2
@@ -289,7 +290,6 @@ ES8388::~ES8388()
   _codec_initialized = true;
   return 1; // OK
 }
-#endif // ESP_PLATFORM - wrapping all 3 initializers
 
 void ES8388::end()
 {
@@ -856,3 +856,4 @@ int ES8388::read(void* buffer, size_t size){
 int ES8388::write(void* buffer, size_t size){
   return AudioOutI2SClass::write(buffer, size);
 }
+#endif // if def ESP_PLATFORM guard

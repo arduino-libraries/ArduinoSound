@@ -56,8 +56,9 @@ void AudioIn::samplesRead(void* buffer, size_t size)
   }
 }
 
-
+#ifdef ESP_PLATFORM
 int AudioIn::get_esp32_i2s_port_number()
 {
   return _esp32_i2s_port_number;
 }
+#endif

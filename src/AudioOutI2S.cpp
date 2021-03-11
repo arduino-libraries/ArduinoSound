@@ -337,6 +337,7 @@ void AudioOutI2SClass::transmit()
   onTransmit();
 }
 
+#ifdef ESP_PLATFORM
 int AudioOutI2SClass::write(const void *buffer, size_t size)
 {
   size_t bytes_written;
@@ -347,5 +348,6 @@ int AudioOutI2SClass::write(const void *buffer, size_t size)
     return 1; // OK
   }
 }
+#endif
 
 AudioOutI2SClass AudioOutI2S;

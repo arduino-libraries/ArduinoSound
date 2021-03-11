@@ -111,8 +111,10 @@ int FFTAnalyzer::read(int spectrum[], int size)
 }
 
 int FFTAnalyzer::configure(AudioIn* input){
+  #ifdef ESP_PLATFORM
   _input = input;
-  _channels = _input->channels();
+  #endif
+  _channels = input->channels();
 
   int bitsPerSample = input->bitsPerSample();
 

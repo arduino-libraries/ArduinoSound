@@ -15,7 +15,7 @@
   License along with this library; if not, write to the Free Software
   Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 */
-  
+
 #ifndef _ARDUINO_SOUND_H_INCLUDED
 #define _ARDUINO_SOUND_H_INCLUDED
 
@@ -30,6 +30,9 @@
 #include "AudioOutI2S.h"
 #include "FFTAnalyzer.h"
 #include "SDWaveFile.h"
-#include "es8388.h" // Driver for ES8388 codec chip used in ESP32 LyraT audio board.
+
+#if defined ESP_PLATFORM
+  #include "es8388.h" // Driver for ES8388 codec chip used in ESP32 LyraT audio board.
+#endif
 
 #endif

@@ -50,6 +50,7 @@ public:
   virtual long sampleRate();
   virtual int bitsPerSample();
   virtual int channels();
+  virtual int read(void* buffer, size_t size);
 
 #ifdef I2S_HAS_SET_BUFFER_SIZE
   void setBufferSize(int bufferSize);
@@ -57,7 +58,6 @@ public:
 
 protected:
   virtual int begin();
-  virtual int read(void* buffer, size_t size);
   virtual int reset();
 
 private:

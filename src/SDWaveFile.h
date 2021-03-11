@@ -21,9 +21,9 @@
 
 #include <Arduino.h>
 #include <SD.h>
-#include "SD_MMC.h"
 
 #ifdef ESP_PLATFORM
+  #include "SD_MMC.h"
   #define __REV __builtin_bswap32
 #else
   #define ARM_MATH_CM0PLUS

@@ -61,7 +61,9 @@ public:
 
   // Manual data transmit
   virtual void transmit();
+#ifdef ESP_PLATFORM
   int write(const void *buffer, size_t size);
+#endif
 
 private:
   int startPlayback(AudioIn& input, bool loop);

@@ -142,22 +142,14 @@ AudioInI2SClass::~AudioInI2SClass()
 
   i2s_adc_enable((i2s_port_t) _esp32_i2s_port_number);
 
-#endif // ifdef ESP_PLATFORM
 
   _sampleRate = sampleRate;
   _bitsPerSample = bitsPerSample;
 
-  #ifndef ESP_PLATFORM
-    // add the receiver callback
-    I2S.onReceive(&(AudioInI2SClass::onI2SReceive));
-
-    // trigger a read to kick things off
-    I2S.read();
-  #endif // #ifndef ESP_PLATFORM
-
   _initialized = true;
   return 1;
 }
+#endif // ifdef ESP_PLATFORM
 
 
 #ifdef I2S_HAS_SET_BUFFER_SIZE
