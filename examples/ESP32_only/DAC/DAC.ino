@@ -1,3 +1,4 @@
+#ifdef ESP_PLATFORM
 /*
  This example demostrates usage of builtin DAC and it's usage for playing audio.
 
@@ -160,3 +161,8 @@ void loop() {
     delay(5000);
   #endif
 }
+#else
+// this example is intended only for ESP devices
+void setup() {}
+void loop() {}
+#endif // ESP_PLATFORM

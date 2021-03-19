@@ -1,3 +1,4 @@
+#ifdef ESP_PLATFORM
 /*
  Example for Espressif LyraT board
  This example records few second using either onboard microphones, or connected microphone
@@ -353,3 +354,8 @@ void loop() {
   }
   delay(1000);
 }
+#else
+// this example is intended only for ESP devices
+void setup() {}
+void loop() {}
+#endif // ESP_PLATFORM

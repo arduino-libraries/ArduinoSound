@@ -1,3 +1,4 @@
+#ifdef ESP_PLATFORM
 /*
  * WiFi Phone / intercomm / baby monitor
  * This example demonstrates simultaneous use of input and output.
@@ -280,3 +281,8 @@ void configDeviceAP() {
     Serial.println("AP Config Success. Broadcasting with AP: " + String(SSID));
   }
 }
+#else
+// this example is intended only for ESP devices
+void setup() {}
+void loop() {}
+#endif // ESP_PLATFORM
