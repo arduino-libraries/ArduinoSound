@@ -19,7 +19,6 @@
 #include "AudioAnalyzer.h"
 
 #include "AudioIn.h"
-#include "Arduino.h"// only for debug prints
 
 AudioIn::AudioIn() :
   _analyzer(NULL)
