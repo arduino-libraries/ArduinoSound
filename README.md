@@ -2,7 +2,7 @@
 
 [![Compile Examples Status](https://github.com/arduino-libraries/ArduinoSound/workflows/Compile%20Examples/badge.svg)](https://github.com/arduino-libraries/ArduinoSound/actions?workflow=Compile+Examples) [![Spell Check Status](https://github.com/arduino-libraries/ArduinoSound/workflows/Spell%20Check/badge.svg)](https://github.com/arduino-libraries/ArduinoSound/actions?workflow=Spell+Check)
 
-A simple way to play and analyze audio data using Arduino. Currently only supports SAMD21 boards and I2S audio devices.
+A simple way to play and analyze audio data using Arduino. Currently supports SAMD21 boards, ESP boards and I2S audio devices.
 
 For more information about this library please visit us at
 https://www.arduino.cc/en/Reference/ArduinoSound
