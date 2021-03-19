@@ -255,7 +255,7 @@ void FFTAnalyzer::update(const void* buffer, size_t size)
       int16_t *real_buffer;
       real_buffer = (int16_t*)calloc(_length*2,sizeof(int16_t));
       if(real_buffer == NULL){
-        return; // unfortunatelly original method is void
+        return; // unfortunately original method is void
       }
       real_int16_to_complex_int16((int16_t*)_sampleBuffer, _length, real_buffer);
       #if defined ESP32
@@ -270,7 +270,7 @@ void FFTAnalyzer::update(const void* buffer, size_t size)
       float *real_buffer;
       real_buffer = (float*)calloc(_length*2,sizeof(float));
       if(real_buffer == NULL){
-        return; // unfortunatelly original method is void
+        return; // unfortunately original method is void
       }
 
       real_uint32_to_complex_float((uint32_t*)_sampleBuffer, _length, real_buffer);

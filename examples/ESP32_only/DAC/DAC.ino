@@ -1,22 +1,22 @@
 #ifdef ESP_PLATFORM
 /*
- This example demostrates usage of builtin DAC and it's usage for playing audio.
+ This example demonstrates usage of built in DAC and it's usage for playing audio.
 
  Hardware:
    - Any ESP device
    - Audio amplifier
-     - please keep attantion to intended impedance and wattege of speakers
-       * Speaker wattege must be less or equal to wattage of amplifier
+     - please keep attention to intended impedance and wattage of speakers
+       * Speaker wattage must be less or equal to wattage of amplifier
        * Impedance of speakers must match exactly impedance of amplifier
    - SD card reader + SD card
-   - Headphones or speares according to chosen amplifier
+   - Headphones or speakers according to chosen amplifier
 
  Setup:
    Connect your audio amplifier to ESP.
     - Note:
       * ESP32 has DAC on GPIO pins 25 and 26.
       * ESP32-S2 has DAC on GPIO pins 17 and 18.
-   Connect speaker(s) or headpghones.
+   Connect speaker(s) or headphones.
    Connect SD card reader module:
     - ESP32: MISO 19, MOSI 23, SCK 18, CS 5
    Load audio file in WAV format on SD card and insert card in the connected SD module
@@ -27,9 +27,9 @@
    Connect ESP to computer and flash this example
 
  Flashing:
-   If upload doesnt start automatically press and hold Boot button and shortly press RST button.
+   If upload doesn't start automatically press and hold Boot button and shortly press RST button.
    Flashing should start shortly after releasing both buttons.
-   After successfull flashing press shortly RST button
+   After successful flashing press shortly RST button
 
  Usage:
    After flashing and restarting you should hear sound you uploaded with the code.
@@ -61,8 +61,8 @@ SPIClass sdspi(HSPI);
  * Function is expecting initialized SD card connection.
  * Function then attempts to open given filename and read file header.
  * Based on file header then initializes I2S and codec chip.
- * After successfull init the function then plays given file.
- * For demostration this function also prints its progress and file header
+ * After successful init the function then plays given file.
+ * For demonstration this function also prints its progress and file header
  */
 bool play_wav_file(const char filename[]){
   // Create a SDWaveFile

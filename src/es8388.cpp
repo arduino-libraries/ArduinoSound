@@ -391,7 +391,7 @@ void ES8388::volume(float level)
 }
 
 /**
- * @brief Configure ES8388 ADC and DAC volume. Basicly you can consider this as ADC and DAC gain
+ * @brief Configure ES8388 ADC and DAC volume. Basically you can consider this as ADC and DAC gain
  *
  * @param mode:             set ADC or DAC or all
  * @param volume:           -96 ~ 0              for example Es8388SetAdcDacVolume(ES_MODULE_ADC, 30, 6); means set ADC volume -30.5db
@@ -521,8 +521,8 @@ esp_err_t ES8388::es8388_i2s_config_clock(es_i2s_clock_t cfg)
 {
     esp_err_t res = ESP_OK;
     res |= es_write_reg(ES8388_ADDR, ES8388_MASTERMODE, cfg.sclk_div);
-    res |= es_write_reg(ES8388_ADDR, ES8388_ADCCONTROL5, cfg.lclk_div);  //ADCFsMode,singel SPEED,RATIO=256
-    res |= es_write_reg(ES8388_ADDR, ES8388_DACCONTROL2, cfg.lclk_div);  //ADCFsMode,singel SPEED,RATIO=256
+    res |= es_write_reg(ES8388_ADDR, ES8388_ADCCONTROL5, cfg.lclk_div);  //ADCFsMode,single SPEED,RATIO=256
+    res |= es_write_reg(ES8388_ADDR, ES8388_DACCONTROL2, cfg.lclk_div);  //ADCFsMode,single SPEED,RATIO=256
     return res;
 }
 
@@ -596,7 +596,7 @@ esp_err_t ES8388::es8388_init(audio_hal_codec_config_t *cfg)
     res |= es_write_reg(ES8388_ADDR, ES8388_ADCCONTROL2, tmp);  //0x00 LINSEL & RINSEL, LIN1/RIN1 as ADC Input; DSSEL,use one DS Reg11; DSR, LINPUT1-RINPUT1
     res |= es_write_reg(ES8388_ADDR, ES8388_ADCCONTROL3, 0x02);
     res |= es_write_reg(ES8388_ADDR, ES8388_ADCCONTROL4, 0x0d); // 0000 1101 = MSb (00) left data = left ADC, right data = right ADC; (0) ???; (011) 16-bit serial audio data word length; (01) Left Justified // Left/Right data, Left/Right justified mode, Bits length, I2S format
-    res |= es_write_reg(ES8388_ADDR, ES8388_ADCCONTROL5, 0x02);  //ADCFsMode,singel SPEED,RATIO=256
+    res |= es_write_reg(ES8388_ADDR, ES8388_ADCCONTROL5, 0x02);  //ADCFsMode,single SPEED,RATIO=256
     //ALC for Microphone
     res |= es8388_set_adc_dac_volume(ES_MODULE_ADC, 0, 0);      // 0db
     res |= es_write_reg(ES8388_ADDR, ES8388_ADCPOWER, 0x09); //Power on ADC, Enable LIN&RIN, Power off MICBIAS, set int1lp to low power mode

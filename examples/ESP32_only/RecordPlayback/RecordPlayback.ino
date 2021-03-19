@@ -44,7 +44,7 @@ SPIClass sdspi(HSPI);
 // Class controlling codec chip on LyraT board
 ES8388 *codec_chip;
 
-// Separate I2S controll and SD read/write to different cores
+// Separate I2S control and SD read/write to different cores
 TaskHandle_t Core0Task;
 void Core0TaskCode(void * parameter);
 const int buffer_size = 512;
@@ -81,7 +81,7 @@ QueueHandle_t i2s_data_queue = NULL; // queue holding I2S data
  * Function is expecting initialized SD card connection.
  * Function attempts to create new file on SD card.
  * Based on function parameters then initializes I2S and codec chip.
- * After successfull init the function then records audio in given file.
+ * After successful init the function then records audio in given file.
  */
 void Core0TaskCode( void * parameter){
   uint SD_buffer_size = 40960; // 40kB is most optimal for SD write
@@ -123,7 +123,7 @@ void Core0TaskCode( void * parameter){
       if(buf.finished){
         exit = true;
         Serial.println("Saving done");
-        xEventGroupSetBits(xEventBits, SD_TASK_SAVED_BIT_1); // Notify other task we have finnished saving Wav file
+        xEventGroupSetBits(xEventBits, SD_TASK_SAVED_BIT_1); // Notify other task we have finished saving Wav file
       }
     } // queue not empty
   } // main execution loop while(! exit)
@@ -166,7 +166,7 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
   }
 
   uxReturn = xEventGroupWaitBits(xEventBits,
-                                 SD_TASK_RDY_BIT_0, // wait untill SD task redy to receive
+                                 SD_TASK_RDY_BIT_0, // wait until SD task ready to receive
                                  pdFALSE, // Don't clear received bits
                                  pdFALSE, // logacl OR for waiting bits
                                  portMAX_DELAY ); // Wait indefintely
@@ -176,7 +176,7 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
     codec_chip->end();
     return 0; // ERR
   }else if((uxReturn & SD_TASK_RDY_BIT_0) != SD_TASK_RDY_BIT_0){
-    Serial.println("ERROR: I2S Task reached point that should not happend - waiting untill sd rdy, but after wait flag not set");
+    Serial.println("ERROR: I2S Task reached point that should not happened - waiting until sd rdy, but after wait flag not set");
     Serial.print("flags = 0x"); Serial.println(xEventGroupGetBits(xEventBits),HEX);
     codec_chip->end();
     vEventGroupDelete(xEventBits);
@@ -187,7 +187,7 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
 
   unsigned long startMillis = millis();
   unsigned long timeElapsed = 0;
-  int prev_sec = 0; // help variable for printing remaing time
+  int prev_sec = 0; // help variable for printing remaining time
   do{
     if((xEventGroupGetBits(xEventBits) & SD_TASK_ERROR_BIT_2 ) == SD_TASK_ERROR_BIT_2){
       Serial.println("SD task encountered error - exit main function");
@@ -223,17 +223,17 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
   codec_chip->end();
 
   uxReturn = xEventGroupWaitBits(xEventBits,
-                                 SD_TASK_SAVED_BIT_1, // wait untill SD task saves file
+                                 SD_TASK_SAVED_BIT_1, // wait until SD task saves file
                                  pdFALSE, // Don't clear received bits
                                  pdFALSE, // logacl OR for waiting bits
                                  portMAX_DELAY); // Wait indefintely
  if((uxReturn & SD_TASK_RDY_BIT_0) == SD_TASK_ERROR_BIT_2){
-    Serial.println("ERROR: SD write task reports Error while writting");
+    Serial.println("ERROR: SD write task reports Error while writing");
     Serial.print("flags = 0x"); Serial.println(xEventGroupGetBits(xEventBits),HEX);
     vEventGroupDelete(xEventBits);
     return 0; // ERR
   }else if( ( uxReturn & SD_TASK_SAVED_BIT_1 ) != SD_TASK_SAVED_BIT_1 ){
-    Serial.println("ERROR: I2S Task reached point that should not happend - waiting untill sd finished, but after flag was not set");
+    Serial.println("ERROR: I2S Task reached point that should not happened - waiting untill sd finished, but after flag was not set");
     Serial.print("flags = 0x"); Serial.println(xEventGroupGetBits(xEventBits),HEX);
     vEventGroupDelete(xEventBits);
     return 0; // ERR
@@ -253,8 +253,8 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
  * Function is expecting initialized SD card connection.
  * Function then attempts to open given filename and read file header.
  * Based on file header then initializes I2S and codec chip.
- * After successfull init the function then plays given file.
- * For demostration this function also prints its progress and file header
+ * After successful init the function then plays given file.
+ * For demonstration this function also prints its progress and file header
  */
 bool play_wav_file(const char filename[]){
   // Create a SDWaveFile
