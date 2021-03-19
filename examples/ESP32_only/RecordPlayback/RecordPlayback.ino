@@ -233,7 +233,7 @@ bool record_wav_file(const char filename[], int duration, int bitsPerSample, lon
     vEventGroupDelete(xEventBits);
     return 0; // ERR
   }else if( ( uxReturn & SD_TASK_SAVED_BIT_1 ) != SD_TASK_SAVED_BIT_1 ){
-    Serial.println("ERROR: I2S Task reached point that should not happened - waiting untill sd finished, but after flag was not set");
+    Serial.println("ERROR: I2S Task reached point that should not happened - waiting until sd finished, but after flag was not set");
     Serial.print("flags = 0x"); Serial.println(xEventGroupGetBits(xEventBits),HEX);
     vEventGroupDelete(xEventBits);
     return 0; // ERR
