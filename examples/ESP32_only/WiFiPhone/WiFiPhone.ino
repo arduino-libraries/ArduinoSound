@@ -1,23 +1,30 @@
-#ifdef ESP_PLATFORM
-/*
- * WiFi Phone / intercomm / baby monitor
- * This example demonstrates simultaneous use of input and output.
- *
- * Needed hardware:
- *  - At least 2 LyraT boards.
- *  - For each LyraT board you will also need speaker or headphones.
- *  - You can use either onboard microphones or your own external microphone.
- *
- * Setup:
- *  - Build and flash both LyraT boards.
- *  - If you intend to use external microphone set USE_EXTERNAL_MIC true;
- *    - If you don't have any external microphone simply leave USE_EXTERNAL_MIC false
- *  - If you notice significant lag try to reset both devices
- *
- * Note:
- *  - Do not change bitrate nor sample rate as it will result in noisy, laggy and distorted unusable audio.
- *
+/** @file WiFiPhone.ino
+    @brief Demonstrates simultaneous use of input and output.
+    @date 23rd October 2020
+    @author Tomas Pilny
+
+WiFi Phone / intercomm / baby monitor
+
+This example demonstrates simultaneous use of input and output.
+
+Needed hardware:
+  - At least 2 LyraT boards.
+  - Ideally you will need speaker(s) or headphones for each LyraT board.
+    - You can do OK with only one if you don't need to use this example bidirectionally.
+  - You can use either onboard microphones or your own external microphone with 3.5mm audio jack.
+
+Setup:
+  - If you intend to use external microphone set USE_EXTERNAL_MIC true and connect the mic to AUX_IN.
+    - If you don't have any external microphone simply leave USE_EXTERNAL_MIC false - built-in mics will be used.
+  - If you don't have downloaded ESP32 boards in your Arduino IDE follow this tutorial:
+    - https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
+  - Build and flash both LyraT boards.
+  - If you notice significant lag try to reset both devices
+
+@note
+  - Do not change bitrate nor sample rate as it will result in noisy, laggy and distorted unusable audio.
  */
+#ifdef ESP_PLATFORM
 
 #define I_AM_RX // comment this if you want only to transmit
 #define I_AM_TX // comment this if you want only to receive

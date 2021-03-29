@@ -1,38 +1,39 @@
-#ifdef ESP_PLATFORM
-/*
- Example for Espressif LyraT board
- This example records few second using either onboard microphones, or connected microphone
- saves the recording to SD card and then plays it back to line out (headphones or speakers)
+/** @file RecordPlayback.ino
+    @brief Records few second audio, saves it to SD card and then plays it back
+    @date 23rd October 2020
+    @author Tomas Pilny
 
- Setup:
-   Make sure your micro SD card is formatted in FAT32
-   Put micro SD card in card slot on LyraT board
-   Make sure dip switch on board has pins 1 and 2 in ON position and remaining pins in OFF position
-   Connect headphones or speaker to PHONEJACK
-   If you want to use external microphone connect it to AUX_IN and change USE_EXTERNAL_MIC to true
-   If you don't have downloaded ESP32 boards in your Arduino IDE follow this tutorial:
-     https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
-   In the Arduino IDE chose Tools > Board > ESP32 Arduinio > ESP32 Wrover Module
+Example for Espressif LyraT board
 
- Flashing:
-   When successfully compiled press and hold Boot button and shortly press RST button.
-   Flashing should start shortly after releasing both buttons.
-   After successful flashing press shortly RST button
+This example records few second using either onboard microphones, or connected microphone
+saves the recording to SD card and then plays it back to line out (headphones or speakers)
+
+Setup:
+  - Make sure your micro SD card is formatted in FAT32
+  - Put micro SD card in card slot on LyraT board
+  - Make sure dip switch on board has pins 1 and 2 in ON position and remaining pins in OFF position
+  - Connect headphones or speaker to PHONEJACK
+  - If you want to use external microphone connect it to AUX_IN and change USE_EXTERNAL_MIC to true
+  - If you don't have downloaded ESP32 boards in your Arduino IDE follow this tutorial:
+    - https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
+  - In the Arduino IDE chose Tools > Board > ESP32 Arduinio > ESP32 Wrover Module
+
+Flashing:
+  - When successfully compiled press and hold Boot button and shortly press RST button.
+  - Flashing should start shortly after releasing both buttons.
+  - After successful flashing press shortly RST button
 
  Usage:
-   After flashing and restarting say something to microphone and listen the playback.
-   You can later use the file recorded on SD card in your computer or elsewhere.
+  - After flashing and restarting say something to microphone and listen the playback.
+  - You can later use the file recorded on SD card in your computer or elsewhere.
+*/
+#ifdef ESP_PLATFORM
 
- created 23 October 2020
- by Tomas Pilny
- */
-
- // Set true to use external microphone connected to AUX_IN
- // Set false to use onboard microphones
+// Set true to use external microphone connected to AUX_IN
+// Set false to use onboard microphones
 #define USE_EXTERNAL_MIC false
-
-
 #include "SD_MMC.h"
+
 #include <ArduinoSound.h>
 
 // filename of wave file to record into and playback
@@ -43,12 +44,11 @@ SPIClass sdspi(HSPI);
 
 // Class controlling codec chip on LyraT board
 ES8388 *codec_chip;
-
 // Separate I2S control and SD read/write to different cores
 TaskHandle_t Core0Task;
 void Core0TaskCode(void * parameter);
-const int buffer_size = 512;
 
+const int buffer_size = 512;
 typedef struct buffer {
   uint8_t data[buffer_size];
   bool finished;
@@ -59,6 +59,7 @@ EventGroupHandle_t xEventBits;
 /* Synchronization flags */
 #define SD_TASK_RDY_BIT_0   ( 1 << 0 )
 #define SD_TASK_SAVED_BIT_1 ( 1 << 1 )
+
 #define SD_TASK_ERROR_BIT_2 ( 1 << 2 )
 
 QueueHandle_t i2s_data_queue = NULL; // queue holding I2S data
@@ -340,7 +341,6 @@ void setup() {
 
   Serial.println("Initialization done.");
 }
-
 void loop() {
   int recordDuration = 5; // number of seconds to keep recording
   int bitsPerSample = 16;

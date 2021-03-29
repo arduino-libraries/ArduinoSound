@@ -1,43 +1,45 @@
-#ifdef ESP_PLATFORM
-/*
- This example demonstrates usage of built in DAC and it's usage for playing audio.
+/** @file DAC.ino
+    @brief This example demonstrates usage of built in DAC and it's usage for playing audio.
+    @date 13th November 2020
+    @author Tomas Pilny
 
- Hardware:
-   - Any ESP device
-   - Audio amplifier
-     - please keep attention to intended impedance and wattage of speakers
-       * Speaker wattage must be less or equal to wattage of amplifier
-       * Impedance of speakers must match exactly impedance of amplifier
-   - SD card reader + SD card
-   - Headphones or speakers according to chosen amplifier
+Hardware:
+  - Any ESP device
+  - Audio amplifier
+    - please keep attention to intended impedance and wattage of speakers
+      - Speaker wattage must be less or equal to wattage of amplifier
+      - Impedance of speakers must match exactly impedance of amplifier
+  - SD card reader + SD card
+  - Headphones or speakers according to chosen amplifier
 
- Setup:
-   Connect your audio amplifier to ESP.
-    - Note:
-      * ESP32 has DAC on GPIO pins 25 and 26.
-      * ESP32-S2 has DAC on GPIO pins 17 and 18.
-   Connect speaker(s) or headphones.
-   Connect SD card reader module:
+Setup:
+  - Connect your audio amplifier to ESP.
+  - Note:
+    - ESP32 has DAC on GPIO pins 25 and 26.
+    - ESP32-S2 has DAC on GPIO pins 17 and 18.
+  - Connect speaker(s) or headphones.
+  - Connect SD card reader module:
     - ESP32: MISO 19, MOSI 23, SCK 18, CS 5
-   Load audio file in WAV format on SD card and insert card in the connected SD module
-   Change test_file value to your audio file name
-   If you want to trigger the playback with button press:
+  - Load audio file in WAV format on SD card and insert card in the connected SD module
+  - Change test_file value to your audio file name
+  - If you want to trigger the playback with button press:
     - Connect your button to GPIO 12 and GND
     - Uncomment line #define USE_BUTTON located below this comment block
-   Connect ESP to computer and flash this example
+  - If you don't have downloaded ESP32 boards in your Arduino IDE follow this tutorial:
+    - https://randomnerdtutorials.com/installing-the-esp32-board-in-arduino-ide-windows-instructions/
+  - Connect ESP to computer and flash this example
 
  Flashing:
-   If upload doesn't start automatically press and hold Boot button and shortly press RST button.
-   Flashing should start shortly after releasing both buttons.
-   After successful flashing press shortly RST button
+  - If upload doesn't start automatically press and hold Boot button and shortly press RST button.
+  - Flashing should start shortly after releasing both buttons.
+  - After successful flashing press shortly RST button
 
  Usage:
-   After flashing and restarting you should hear sound you uploaded with the code.
-   If you chose to use button press it and the sound should be played.
+  - After flashing and restarting you should hear sound you uploaded with the code.
+  - If you chose to use button press it and the sound should be played.
 
- created 13 November 2020
- by Tomas Pilny
  */
+#ifdef ESP_PLATFORM
 #include <ArduinoSound.h>
 #include "SD_MMC.h"
 
