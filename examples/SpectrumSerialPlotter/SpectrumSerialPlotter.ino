@@ -1,17 +1,17 @@
 /*
- This example reads audio data from an Invensense's ICS43432 I2S microphone
- breakout board, and prints out the spectrum to the Serial console. The
- Serial Plotter built into the Arduino IDE can be used to plot the audio
- amplitude data (Tools -> Serial Plotter)
+ This example reads audio data from an InvenSense ICS-43432 I2S microphone
+ breakout board, and prints out the spectrum to the Serial Monitor. The
+ Serial Plotter built into the Arduino IDE (Tools -> Serial Plotter) can be
+ used to plot the audio amplitude data.
 
  Circuit:
- * Arduino/Genuino Zero, MKRZero or MKR1000 board
- * ICS43432:
+ * Arduino Zero, MKR Zero or MKR1000 board
+ * ICS-43432:
    * GND connected GND
-   * 3.3V connected 3.3V (Zero) or VCC (MKR1000, MKRZero)
-   * WS connected to pin 0 (Zero) or pin 3 (MKR1000, MKRZero)
-   * CLK connected to pin 1 (Zero) or pin 2 (MKR1000, MKRZero)
-   * SD connected to pin 9 (Zero) or pin A6 (MKR1000, MKRZero)
+   * 3.3V connected 3.3V (Zero) or VCC (MKR1000, MKR Zero)
+   * WS connected to pin 0 (Zero) or pin 3 (MKR1000, MKR Zero)
+   * CLK connected to pin 1 (Zero) or pin 2 (MKR1000, MKR Zero)
+   * SD connected to pin 9 (Zero) or pin A6 (MKR1000, MKR Zero)
 
  created 21 November 2016
  by Sandeep Mistry

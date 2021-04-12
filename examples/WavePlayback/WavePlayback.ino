@@ -1,16 +1,16 @@
 /*
  This reads a wave file from an SD card and plays it using the I2S interface to
- a MAX08357 I2S Amp Breakout board.
+ a MAX98357 I2S Amp Breakout board.
 
  Circuit:
- * Arduino/Genuino Zero, MKRZero or MKR1000 board
+ * Arduino Zero, MKR Zero or MKR1000 board
  * SD breakout or shield connected
- * MAX08357:
+ * MAX98357:
    * GND connected GND
    * VIN connected 5V
-   * LRC connected to pin 0 (Zero) or pin 3 (MKR1000, MKRZero)
-   * BCLK connected to pin 1 (Zero) or pin 2 (MKR1000, MKRZero)
-   * DIN connected to pin 9 (Zero) or pin A6 (MKR1000, MKRZero)
+   * LRC connected to pin 0 (Zero) or pin 3 (MKR1000, MKR Zero)
+   * BCLK connected to pin 1 (Zero) or pin 2 (MKR1000, MKR Zero)
+   * DIN connected to pin 9 (Zero) or pin A6 (MKR1000, MKR Zero)
 
  created 15 November 2016
  by Sandeep Mistry

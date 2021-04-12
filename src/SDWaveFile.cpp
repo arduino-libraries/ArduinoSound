@@ -150,7 +150,7 @@ int SDWaveFile::cue(long time)
     offset = 0;
   }
 
-  // make sure it's multiple of 512
+  // make sure it's a multiple of 512
   offset = (offset / 512) * 512;
 
   if ((uint32_t)offset > _file.size()) {
