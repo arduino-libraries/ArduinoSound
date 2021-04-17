@@ -141,10 +141,10 @@ long SDWaveFile::currentTime()
 int SDWaveFile::cue(long time)
 {
   if (time < 0) {
-    return 1;
+    return 0;
   }
 
-  long offset = (time * _blockAlign) - _dataOffset;
+  long offset = (time * _blockAlign * _sampleRate) + _dataOffset;
 
   if (offset < 0) {
     offset = 0;
@@ -154,12 +154,12 @@ int SDWaveFile::cue(long time)
   offset = (offset / 512) * 512;
 
   if ((uint32_t)offset > _file.size()) {
-    return 1;
+    return 0;
   }
 
   _file.seek(offset);
-
-  return 0;
+  
+  return 1;
 }
 
 int SDWaveFile::begin()
