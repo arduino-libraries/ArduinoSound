@@ -728,10 +728,11 @@ None
 …
 ```
 
-### `## FFTAnalyzer class
+## FFTAnalyzer class
 
-FFTAnalyzer
-Description
+### `FFTAnalyzer`
+
+#### Description
 Create an FFT analyzer with the specified length
 
 #### Syntax
@@ -1104,8 +1105,10 @@ void loop() {
 
 ## SDWave class
 
-SDWaveFile
-Description
+### `SDWaveFile`
+
+#### Description
+
 Create an audio in source for a Wave file on an SD card
 
 #### Syntax
