@@ -234,7 +234,7 @@ void loop() {
 }
 ```
 
-### `## AudioInI2S class
+## AudioInI2S class
 
 AudioInI2S.begin()`
 
@@ -334,7 +334,7 @@ None
 #### Example
 
 ```
-…
+
   // setup the I2S audio input for 44.1 kHz with 32-bits per sample
   if (!AudioInI2S.begin(44100, 32)) {
     Serial.println("Failed to initialize I2S input!");
@@ -345,7 +345,7 @@ None
 
   // stop the input source
   AudioInI2S.end();
-…
+
 ```
 
 ### `AudioInI2S.sampleRate()`
@@ -365,7 +365,7 @@ Current sample rate of the I2S interface in Hz.
 #### Example
 
 ```
-…
+
   // setup the I2S audio input for 44.1 kHz with 32-bits per sample
   if (!AudioInI2S.begin(44100, 32)) {
     Serial.println("Failed to initialize I2S input!");
@@ -378,7 +378,7 @@ Current sample rate of the I2S interface in Hz.
   Serial.println(AudioInI2S.bitsPerSample()); // prints out the bits per sample rate used  in begin(...)
   Serial.print(“channels = “);
   Serial.println(AudioInI2S.channels()); // prints out 2, I2S always has 2 channels
-…
+
 ```
 
 ### `AudioInI2S.bitsPerSample()`
@@ -398,7 +398,7 @@ Current bits per sample of the I2S interface
 #### Example
 
 ```
-…
+
   // setup the I2S audio input for 44.1 kHz with 32-bits per sample
   if (!AudioInI2S.begin(44100, 32)) {
     Serial.println("Failed to initialize I2S input!");
@@ -411,7 +411,7 @@ Current bits per sample of the I2S interface
   Serial.println(AudioInI2S.bitsPerSample()); // prints out the bits per sample rate used  in begin(...)
   Serial.print(“channels = “);
   Serial.println(AudioInI2S.channels()); // prints out 2, I2S always has 2 channels
-…
+
 ```
 
 ### `AudioInI2S.channels()`
@@ -431,7 +431,7 @@ Current number of channels of the I2S interface. This is always return 2, as I2S
 #### Example
 
 ```
-…
+
   // setup the I2S audio input for 44.1 kHz with 32-bits per sample
   if (!AudioInI2S.begin(44100, 32)) {
     Serial.println("Failed to initialize I2S input!");
@@ -444,7 +444,7 @@ Current number of channels of the I2S interface. This is always return 2, as I2S
   Serial.println(AudioInI2S.bitsPerSample()); // prints out the bits per sample rate used  in begin(...)
   Serial.print(“channels = “);
   Serial.println(AudioInI2S.channels()); // prints out 2, I2S always has 2 channels
-…
+
 ```
 
 ## AudioOutI2S Class
@@ -470,7 +470,7 @@ input: input to check (type AudioIn)
 #### Example
 
 ```
-…
+
   // check if the I2S output can play the Audio input
   if (!AudioOutI2S.canPlay(audioInput)) {
     Serial.println("unable to play audio input using I2S!");
@@ -480,7 +480,7 @@ input: input to check (type AudioIn)
   // start playback
   Serial.println("starting playback");
   AudioOutI2S.play(audioInput);
-…
+
 ```
 
 ### `AudioOutI2S.play()`
@@ -504,7 +504,7 @@ input: input to check (type AudioIn)
 #### Example
 
 ```
-…
+
   // check if the I2S output can play the Audio input
   if (!AudioOutI2S.canPlay(audioInput)) {
     Serial.println("unable to play audio input using I2S!");
@@ -514,7 +514,7 @@ input: input to check (type AudioIn)
   // start playback
   Serial.println("starting playback");
   AudioOutI2S.play(audioInput);
-…
+
 ```
 
 ### `AudioOutI2S.loop()`
@@ -552,7 +552,7 @@ AudioOutI2S.pause();
 #### Example
 
 ```
-…
+
   // check if the I2S output can play the Audio input
   if (!AudioOutI2S.canPlay(audioInput)) {
     Serial.println("unable to play audio input using I2S!");
@@ -570,7 +570,7 @@ AudioOutI2S.pause();
   delay(10000); // wait for 10 seconds
 
   AudioOutI2S.resume(); // resume playback
-…
+
 ```
 
 ### `AudioOutI2S.resume()`
@@ -590,7 +590,7 @@ AudioOutI2S.resume();
 #### Example
 
 ```
-…
+
   // check if the I2S output can play the Audio input
   if (!AudioOutI2S.canPlay(audioInput)) {
     Serial.println("unable to play audio input using I2S!");
@@ -608,7 +608,7 @@ AudioOutI2S.resume();
   delay(10000); // wait for 10 seconds
 
   AudioOutI2S.resume(); // resume playback
-…
+
 ```
 
 ### `AudioOutI2S.stop()`
@@ -628,7 +628,7 @@ AudioOutI2S.stop();
 #### Example
 
 ```
-…
+
   // check if the I2S output can play the Audio input
   if (!AudioOutI2S.canPlay(audioInput)) {
     Serial.println("unable to play audio input using I2S!");
@@ -642,7 +642,7 @@ AudioOutI2S.stop();
   delay(10000); // wait for 10 seconds
 
   AudioOutI2S.stop(); // stop playback
-…
+
 ```
 
 ### `AudioOutI2S.isPlaying()`
@@ -662,7 +662,7 @@ AudioOutI2S.isPlaying();
 #### Example
 
 ```
-…
+
   // check if playback is still going on
   if (!AudioOutI2S.isPlaying()) {
     // playback has stopped
@@ -670,7 +670,7 @@ AudioOutI2S.isPlaying();
     Serial.println("playback stopped");
     while (1); // do nothing
   }
-…
+
 ```
 
 ### `AudioOutI2S.isPaused()`
@@ -690,7 +690,7 @@ AudioOutI2S.isPaused();
 #### Example
 
 ```
-…
+
   // check if playback is paused
   if (AudioOutI2S.isPaued()) {
     // playback has paused
@@ -698,7 +698,7 @@ AudioOutI2S.isPaused();
     Serial.println("playback paused");
     while (1); // do nothing
   }
-…
+
 ```
 
 ### `AudioOutI2S.volume()`
@@ -722,10 +722,10 @@ None
 #### Example
 
 ```
-…
+
   // adjust the playback volume
   AudioOutI2S.volume(5);
-…
+
 ```
 
 ## FFTAnalyzer class
@@ -1227,7 +1227,7 @@ Check if the wave file is valid
 #### Syntax
 
 ```
-If (waveFile) { /* … */ }
+If (waveFile) { /*  */ }
 ```
 
 #### Returns
@@ -1684,7 +1684,7 @@ The number of frames/samples in the wave file
 #### Example
 
 ```
-…
+
 // create a SDWaveFile
   waveFile = SDWaveFile(filename);
 
@@ -1694,12 +1694,12 @@ The number of frames/samples in the wave file
     while (1); // do nothing
   }
 
-  //….
+  //.
 
   long frames = waveFile.frames();
   Serial.print("Frames = ");
   Serial.println(frames);
-…
+
 ```
 
 ### `SDWaveFile.duration()`
@@ -1849,7 +1849,7 @@ time: time is seconds to change playback to
 #### Example
 
 ```
-…
+
   // create a SDWaveFile
   waveFile = SDWaveFile(filename);
 
@@ -1863,7 +1863,5 @@ time: time is seconds to change playback to
 
   // jump back to 10 second into the wave file
   waveFile.cue(10);
-…
-```
 
-### `
+```
