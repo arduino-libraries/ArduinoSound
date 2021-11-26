@@ -5,6 +5,5 @@ This library provides simple way to play and analyze audio data using Arduino on
 To use this library:
 
 ```
-#include <AudioSound.h>
+#include <ArduinoSound.h>
 ```
-
